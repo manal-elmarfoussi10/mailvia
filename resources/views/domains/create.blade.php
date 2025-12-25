@@ -9,8 +9,8 @@
                 <form action="{{ route('domains.store') }}" method="POST" class="space-y-6">
                     @csrf
                     <div>
-                        <x-label for="domain" value="Domain Name" />
-                        <x-input id="domain" name="domain" type="text" class="mt-1 block w-full" placeholder="example.com" required />
+                        <x-input-label for="domain" value="Domain Name" />
+                        <x-text-input id="domain" name="domain" type="text" class="mt-1 block w-full" placeholder="example.com" required />
                         <p class="mt-1 text-sm text-gray-500 italic">Example: example.com (without http:// or https://)</p>
                     </div>
 
