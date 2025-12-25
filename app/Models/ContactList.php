@@ -1,0 +1,23 @@
+<?php
+
+namespace App\Models;
+
+use App\Models\Company;
+use App\Models\Contact;
+use Illuminate\Database\Eloquent\Model;
+
+class ContactList extends Model
+{
+    protected $guarded = [];
+
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    public function contacts()
+    {
+        return $this->belongsToMany(Contact::class);
+    }
+    //
+}
