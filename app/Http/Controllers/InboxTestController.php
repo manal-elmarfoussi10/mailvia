@@ -108,7 +108,7 @@ class InboxTestController extends Controller
                     // Or failing allows us to see the error. Let's record it.
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
              return back()->with('error', 'Critical Error: ' . $e->getMessage());
         }
 
