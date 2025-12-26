@@ -33,7 +33,7 @@
                                     <h3 class="text-lg font-semibold text-gray-900">{{ $sender->name }}</h3>
                                     <p class="text-sm text-gray-500 mt-1">{{ $sender->email }}</p>
                                 </div>
-                                @if($sender->dns_verified)
+                                @if($sender->status === 'verified')
                                     <x-badge-success>Verified</x-badge-success>
                                 @else
                                     <x-badge-warning>Pending</x-badge-warning>
@@ -46,7 +46,7 @@
                             </div>
 
                             <div class="mt-6 flex items-center justify-between pt-4 border-t border-gray-200">
-                                <form action="{{ route('senders.check-dns', $sender) }}" method="POST" class="inline">
+                                <form action="{{ route('senders.verify', $sender) }}" method="POST" class="inline">
                                     @csrf
                                     <button type="submit" class="text-sm font-medium text-violet-600 hover:text-violet-700 transition">
                                         Check DNS
