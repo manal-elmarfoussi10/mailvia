@@ -23,7 +23,7 @@ class InboxTestController extends Controller
         $company = auth()->user()->companies()->first();
         $templates = $company->templates;
         $seedLists = $company->seedLists()->withCount('emails')->get();
-        $senders = $company->senders()->with('provider')->where('status', 'verified')->get(); // Only verified senders
+        $senders = $company->senders()->with('provider')->get(); // Allow all senders (verified or not)
         
         return view('inbox-tests.create', compact('templates', 'seedLists', 'senders'));
     }
