@@ -19,6 +19,11 @@ class InboxTest extends Model
         return $this->belongsTo(Company::class);
     }
 
+    public function sender()
+    {
+        return $this->belongsTo(Sender::class);
+    }
+
     public function template()
     {
         return $this->belongsTo(Template::class);

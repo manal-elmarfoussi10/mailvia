@@ -23,8 +23,9 @@ class InboxTestController extends Controller
         $company = auth()->user()->companies()->first();
         $templates = $company->templates;
         $seedLists = $company->seedLists()->withCount('emails')->get();
+        $senders = $company->senders()->where('status', 'verified')->get(); // Only verified senders
         
-        return view('inbox-tests.create', compact('templates', 'seedLists'));
+        return view('inbox-tests.create', compact('templates', 'seedLists', 'senders'));
     }
 
     public function store(Request $request)
@@ -32,6 +33,7 @@ class InboxTestController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'seed_list_id' => 'required|exists:seed_lists,id',
+            'sender_id' => 'required|exists:senders,id',
             'template_id' => 'nullable|exists:templates,id',
             'subject' => 'required|string|max:255',
         ]);
@@ -45,6 +47,7 @@ class InboxTestController extends Controller
         $test = $company->inboxTests()->create([
             'name' => $request->name,
             'seed_emails' => $seedEmails,
+            'sender_id' => $request->sender_id,
             'template_id' => $request->template_id,
             'subject' => $request->subject,
             'status' => 'draft',
@@ -73,7 +76,11 @@ class InboxTestController extends Controller
         }
 
         $template = $inboxTest->template;
-        $sender = $inboxTest->company->senders()->first();
+        $sender = $inboxTest->sender ?? $inboxTest->company->senders()->first();
+
+        if (!$sender) {
+             return back()->with('error', 'No verified sender selected or found.');
+        }
 
         foreach ($inboxTest->seed_emails as $email) {
             try {
