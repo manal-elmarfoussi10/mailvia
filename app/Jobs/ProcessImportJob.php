@@ -30,6 +30,18 @@ class ProcessImportJob implements ShouldQueue
             $mapping = $import->mapping;
             $listId = $import->contact_list_id;
 
+            // Auto-detect delimiter for CSVs before reading
+            $extension = pathinfo($import->file_path, PATHINFO_EXTENSION);
+            if (strtolower($extension) === 'csv') {
+                $content = file_get_contents(storage_path('app/' . $import->file_path));
+                $firstLine = strtok($content, "\n");
+                if (substr_count($firstLine, ';') > substr_count($firstLine, ',')) {
+                     \Config::set('excel.imports.csv.delimiter', ';');
+                } else {
+                     \Config::set('excel.imports.csv.delimiter', ',');
+                }
+            }
+
             // Read the file
             $data = Excel::toArray([], $import->file_path);
             

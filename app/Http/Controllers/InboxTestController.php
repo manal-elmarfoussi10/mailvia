@@ -87,34 +87,57 @@ class InboxTestController extends Controller
         
         // Use provider associated with sender
         $provider = $sender->provider;
+        $failedCount = 0;
         
         try {
-            $mailer = $provider ? \App\Services\MailService::configureMailer($provider) : null;
-            // If no provider linked, fallback to default (mailer=null means default in facade usually, but we need empty string for 'default' or explicit)
-            // Actually Mail::mailer(null) might fail. If no provider, use default.
-            $mailInstance = $mailer ? Mail::mailer($mailer) : Mail::parent(); 
+            $mailerName = $provider ? \App\Services\MailService::configureMailer($provider) : null;
+            // Use the configured mailer or fallback to default
+            $mailInstance = $mailerName ? Mail::mailer($mailerName) : Mail::to([]); // Fallback to empty if no provider? Or default?
+            
+            if (!$mailerName) {
+                 // Fallback to system default if no provider specific config
+                 $mailInstance = Mail::mailer(config('mail.default'));
+            }
     
             foreach ($inboxTest->seed_emails as $email) {
                 try {
+                    $mailInstance->to($email)->send(new \App\Mail\InboxTestMail($inboxTest, $template, $sender)); // Using Mailable is better but inline is ok for now if we keep inline
+                    
+                    // We need to support the inline closure style if we don't have a Mailable class
+                    // Re-implementing inline send for now to match previous style but with correct instance
+                    /* 
                     $mailInstance->send([], [], function ($message) use ($email, $inboxTest, $template, $sender) {
                         $message->to($email)
                             ->from($sender->from_email ?? 'test@example.com', $sender->from_name ?? 'Test')
                             ->subject($inboxTest->subject)
                             ->html($template->content); 
                     });
+                    */
+                    // Actually, let's keep the closure for minimal refactor impact, but using $mailInstance correctly
+                     $mailInstance->send([], [], function ($message) use ($email, $inboxTest, $template, $sender) {
+                        $message->to($email)
+                            ->from($sender->from_email ?? 'test@example.com', $sender->from_name ?? 'Test')
+                            ->subject($inboxTest->subject)
+                            ->html($template->content ?? 'Test Email'); 
+                    });
+
+                    \Log::info("Inbox Test sent to $email via " . ($mailerName ?? 'default'));
                 } catch (\Exception $e) {
                     \Log::error("Failed to send inbox test to $email: " . $e->getMessage());
-                    // Continue to next email instead of failing entire batch? 
-                    // Or failing allows us to see the error. Let's record it.
+                    // Record failure but don't stop loop
+                    $failedCount++;
                 }
             }
         } catch (\Throwable $e) {
+             \Log::error("Critical Error in InboxTest sending: " . $e->getMessage());
              return back()->with('error', 'Critical Error: ' . $e->getMessage());
         }
 
         $inboxTest->update([
-            'status' => 'sent',
+            'status' => $failedCount === count($inboxTest->seed_emails) ? 'failed' : 'sent',
             'sent_at' => now(),
+            // Store simple stats about immediate failures
+            'results' => ['sent_count' => count($inboxTest->seed_emails) - $failedCount, 'failed_count' => $failedCount]
         ]);
 
         return redirect()->route('inbox-tests.show', $inboxTest)

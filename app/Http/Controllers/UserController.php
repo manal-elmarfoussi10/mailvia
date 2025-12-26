@@ -37,7 +37,7 @@ class UserController extends Controller
         $company = auth()->user()->companies()->first();
 
         if (!$company) {
-             return back()->withErrors(['company' => 'You must belong to a company to add users.']);
+             return back()->with('error', 'You must belong to a company to add users.');
         }
 
         $user = User::create([

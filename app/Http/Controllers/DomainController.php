@@ -66,11 +66,37 @@ class DomainController extends Controller
                     if (str_contains($record['txt'], $domain->verification_token)) {
                         $ownership = true;
                     }
+                    // Improved SPF Check: look for general "v=spf1" AND specific includes if possible
                     if (str_contains($record['txt'], 'v=spf1')) {
-                        $spf = true;
+                        $content = $record['txt'];
+                        // Basic SPF check passed
+                        $spf = true; 
+                        
+                        // Optional: Check for specific provider includes if we want to be strict
+                        // if (str_contains($content, 'include:amazonses.com') || str_contains($content, 'include:_spf.mail.hostinger.com')) {
+                        //     $spf = true;
+                        // }
                     }
                 }
             }
+        }
+
+        // DKIM Check: Check standard selector "default" (Hostinger) or just presence of any DKIM record
+        // Since we don't know the exact selector for SES (it's random), checking "default" covers Hostinger.
+        // For SES, we might need a UI input for "Selector" in the future. 
+        // For now, let's check 'default' and 'mailvia' (us)
+        $selectors = ['default', 'google', 'k1', 'smtp']; 
+        $dkim = false;
+        foreach ($selectors as $selector) {
+             $dkimRecords = @dns_get_record($selector . "._domainkey." . $domain->domain, DNS_TXT);
+             if ($dkimRecords) {
+                 foreach ($dkimRecords as $record) {
+                     if (isset($record['txt']) && str_contains($record['txt'], 'v=DKIM1')) {
+                         $dkim = true;
+                         break 2;
+                     }
+                 }
+             }
         }
 
         // DMARC Check
@@ -86,6 +112,7 @@ class DomainController extends Controller
 
         $domain->update([
             'spf_verified' => $spf,
+            'dkim_verified' => $dkim, // Now saving DKIM status
             'dmarc_verified' => $dmarc,
             'status' => $ownership ? 'verified' : ($spf || $dmarc ? 'pending' : 'failed'),
         ]);

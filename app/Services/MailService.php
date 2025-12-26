@@ -36,11 +36,19 @@ class MailService
                 break;
 
             case 'smtp':
+                $port = $credentials['port'] ?? 587;
+                $encryption = $credentials['encryption'] ?? null;
+                
+                // Auto-detect encryption if not set
+                if (!$encryption) {
+                    $encryption = ($port == 465) ? 'ssl' : 'tls';
+                }
+
                 Config::set($configKey, [
                     'transport' => 'smtp',
                     'host' => $credentials['host'] ?? '',
-                    'port' => $credentials['port'] ?? 587,
-                    'encryption' => $credentials['encryption'] ?? 'tls',
+                    'port' => $port,
+                    'encryption' => $encryption,
                     'username' => $credentials['username'] ?? '',
                     'password' => $credentials['password'] ?? '',
                     'timeout' => null,

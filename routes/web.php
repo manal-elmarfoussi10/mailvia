@@ -43,6 +43,7 @@ Route::middleware('auth')->group(function () {
     Route::post('campaigns/{campaign}/stop', [\App\Http\Controllers\CampaignController::class, 'stop'])->name('campaigns.stop');
     Route::post('campaigns/{campaign}/duplicate', [\App\Http\Controllers\CampaignController::class, 'duplicate'])->name('campaigns.duplicate');
     Route::get('campaigns/{campaign}/export', [\App\Http\Controllers\CampaignController::class, 'export'])->name('campaigns.export');
+    Route::get('campaigns/{campaign}/progress', [\App\Http\Controllers\CampaignProgressController::class, 'show'])->name('campaigns.progress');
 
     Route::get('queue-monitor', [\App\Http\Controllers\QueueMonitorController::class, 'index'])->name('queue.monitor');
 
@@ -54,6 +55,9 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('users', \App\Http\Controllers\UserController::class);
     Route::get('audit-logs', [\App\Http\Controllers\AuditLogController::class, 'index'])->name('audit-logs.index');
+    Route::get('admin/mail/test', [\App\Http\Controllers\AdminMailTestController::class, 'index'])->name('admin.mail.test');
+    Route::post('admin/mail/test', [\App\Http\Controllers\AdminMailTestController::class, 'send'])->name('admin.mail.test.send');
+    
     Route::get('alerts', [\App\Http\Controllers\AlertController::class, 'index'])->name('alerts.index');
     // POST resolve should be restful or at least a post
     Route::post('alerts/{alert}/resolve', [\App\Http\Controllers\AlertController::class, 'resolve'])->name('alerts.resolve');

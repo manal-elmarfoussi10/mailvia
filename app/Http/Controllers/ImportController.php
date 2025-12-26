@@ -58,11 +58,24 @@ class ImportController extends Controller
         // We use a simple read here, assuming first row is header
         $headings = [];
         try {
-            $data = Excel::toArray([], $import->file_path, null, \Maatwebsite\Excel\Excel::XLSX); 
+            // Auto-detect delimiter for CSVs
+            $extension = pathinfo($import->file_path, PATHINFO_EXTENSION);
+            $readerType = null;
+            
+            if (strtolower($extension) === 'csv') {
+                $readerType = \Maatwebsite\Excel\Excel::CSV;
+                // Simple sniff
+                $content = file_get_contents(Storage::path($import->file_path));
+                $firstLine = strtok($content, "\n");
+                if (substr_count($firstLine, ';') > substr_count($firstLine, ',')) {
+                     Config::set('excel.imports.csv.delimiter', ';');
+                } else {
+                     Config::set('excel.imports.csv.delimiter', ','); // Default
+                }
+            }
+
+            $data = Excel::toArray([], $import->file_path, null, $readerType); 
              if (empty($data)) {
-                 // Try CSV if excel fail or just rely on extension logic. 
-                 // For now assumes the library handles detection largely, but might need specific reader calls
-                 // Simplified:
                  $data = Excel::toArray([], $import->file_path);
              }
              

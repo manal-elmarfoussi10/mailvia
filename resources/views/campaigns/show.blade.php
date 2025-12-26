@@ -322,7 +322,7 @@
         const openData = {!! json_encode($timelineData->get('opened')?->pluck('count') ?? []) !!};
         const clickData = {!! json_encode($timelineData->get('clicked')?->pluck('count') ?? []) !!};
 
-        new Chart(ctx, {
+        const engagementChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: timelineLabels.map(h => h.split(' ')[1].substring(0, 5)),
@@ -360,5 +360,190 @@
                 }
             }
         });
+
+        // Real-time Progress Polling
+        const campaignId = {{ $campaign->id }};
+        const campaignStatus = '{{ $campaign->status }}';
+        let pollingInterval = null;
+        let pollingActive = false;
+
+        function updateProgressUI(data) {
+            // Update progress bar
+            const progressBar = document.querySelector('.bg-gradient-to-r');
+            const progressText = document.querySelector('.text-2xl.font-black.text-violet-600');
+            if (progressBar && progressText) {
+                progressBar.style.width = data.progress_percentage + '%';
+                progressText.textContent = data.progress_percentage + '%';
+            }
+
+            // Update metric cards
+            const metrics = data.metrics;
+            const updateMetric = (selector, value) => {
+                const el = document.querySelector(selector);
+                if (el) el.textContent = Number(value).toLocaleString();
+            };
+
+            updateMetric('.text-xl.font-bold.text-gray-900', metrics.total_recipients);
+            updateMetric('.text-xl.font-bold.text-emerald-600', metrics.sent_count);
+            updateMetric('.text-xl.font-bold.text-emerald-700', metrics.delivered_count);
+            updateMetric('.text-xl.font-bold.text-amber-600', metrics.bounced_count);
+            updateMetric('.text-xl.font-bold.text-white', metrics.open_count);
+            document.querySelectorAll('.text-xl.font-bold.text-white')[1]?.textContent = Number(metrics.click_count).toLocaleString();
+
+            // Update engagement rates
+            const rates = data.rates;
+            const rateElements = document.querySelectorAll('.text-2xl.font-black');
+            if (rateElements[1]) rateElements[1].textContent = rates.open_rate + '%';
+            if (rateElements[2]) rateElements[2].textContent = rates.click_rate + '%';
+            if (rateElements[3]) rateElements[3].textContent = rates.bounce_rate + '%';
+            if (rateElements[4]) rateElements[4].textContent = rates.complaint_rate + '%';
+
+            // Update chart
+            if (data.timeline.hours.length > 0) {
+                engagementChart.data.labels = data.timeline.hours.map(h => h.split(' ')[1].substring(0, 5));
+                engagementChart.data.datasets[0].data = data.timeline.opens;
+                engagementChart.data.datasets[1].data = data.timeline.clicks;
+                engagementChart.update('none'); // Update without animation for smoother experience
+            }
+
+            // Update live feed (prepend new events)
+            if (data.recent_events && data.recent_events.length > 0) {
+                const liveFeed = document.querySelector('.flow-root ul');
+                if (liveFeed) {
+                    // Store existing event emails to avoid duplicates
+                    const existingEvents = Array.from(liveFeed.querySelectorAll('.font-medium.text-gray-900'))
+                        .map(el => el.textContent);
+                    
+                    // Add only new events
+                    data.recent_events.slice(0, 5).reverse().forEach(event => {
+                        if (!existingEvents.includes(event.email)) {
+                            const eventHTML = createEventHTML(event);
+                            liveFeed.insertAdjacentHTML('afterbegin', eventHTML);
+                        }
+                    });
+
+                    // Limit to 20 events
+                    const allEvents = liveFeed.querySelectorAll('li');
+                    if (allEvents.length > 20) {
+                        for (let i = 20; i < allEvents.length; i++) {
+                            allEvents[i].remove();
+                        }
+                    }
+                }
+            }
+
+            // Stop polling if campaign completed
+            if (data.status === 'completed' || data.status === 'stopped') {
+                stopPolling();
+            }
+        }
+
+        function createEventHTML(event) {
+            const colors = {
+                'delivered': 'bg-green-500',
+                'opened': 'bg-violet-500',
+                'clicked': 'bg-cyan-500',
+                'bounced': 'bg-amber-500',
+                'complained': 'bg-red-500',
+                'unsubscribed': 'bg-gray-500'
+            };
+            const color = colors[event.type] || 'bg-gray-400';
+
+            return `
+                <li>
+                    <div class="relative pb-8">
+                        <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                        <div class="relative flex space-x-3">
+                            <span class="h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${color}">
+                                <svg class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path d="M5 13l4 4L19 7" />
+                                </svg>
+                            </span>
+                            <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
+                                <div>
+                                    <p class="text-sm text-gray-500">
+                                        <span class="font-medium text-gray-900">${event.email}</span>
+                                        ${event.type}
+                                    </p>
+                                </div>
+                                <div class="whitespace-nowrap text-right text-sm text-gray-500">
+                                    ${event.created_at}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            `;
+        }
+
+        function pollProgress() {
+            fetch(`/campaigns/${campaignId}/progress`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                updateProgressUI(data);
+            })
+            .catch(error => {
+                console.error('Polling error:', error);
+                // Continue polling even on error (might be temporary network issue)
+            });
+        }
+
+        function startPolling() {
+            if (pollingActive) return;
+            
+            pollingActive = true;
+            // Add "Live" indicator
+            const header = document.querySelector('.font-semibold.text-2xl.text-gray-900');
+            if (header && !document.getElementById('live-indicator')) {
+                header.insertAdjacentHTML('afterend', `
+                    <span id="live-indicator" class="inline-flex items-center ml-3 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                        Live
+                    </span>
+                `);
+            }
+
+            // Poll every 3 seconds
+            pollingInterval = setInterval(pollProgress, 3000);
+            // Initial poll
+            pollProgress();
+        }
+
+        function stopPolling() {
+            if (!pollingActive) return;
+            
+            pollingActive = false;
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+
+            // Remove "Live" indicator
+            const liveIndicator = document.getElementById('live-indicator');
+            if (liveIndicator) liveIndicator.remove();
+        }
+
+        // Start polling if campaign is active
+        if (['sending', 'paused'].includes(campaignStatus)) {
+            startPolling();
+        }
+
+        // Stop polling when page is hidden/closed
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopPolling();
+            } else if (['sending', 'paused'].includes(campaignStatus)) {
+                startPolling();
+            }
+        });
     </script>
+
 </x-app-layout>
