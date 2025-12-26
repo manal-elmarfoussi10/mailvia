@@ -22,6 +22,10 @@ class DomainController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge([
+            'domain' => preg_replace('#^https?://#', '', rtrim($request->domain, '/'))
+        ]);
+
         $data = $request->validate([
             'domain' => 'required|string|max:255|unique:domains,domain',
         ]);
