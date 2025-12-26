@@ -46,6 +46,14 @@
                                 <x-input-label for="port" value="SMTP Port" />
                                 <x-text-input id="port" class="block mt-2 w-full" type="text" name="credentials[port]" placeholder="587" />
                             </div>
+                            <div class="col-span-2 md:col-span-1">
+                                <x-input-label for="encryption" value="Encryption" />
+                                <select id="encryption" name="credentials[encryption]" class="block mt-2 w-full border-gray-300 focus:border-violet-500 focus:ring-violet-500 rounded-xl shadow-sm">
+                                    <option value="tls">TLS (Recommended)</option>
+                                    <option value="ssl">SSL (Port 465)</option>
+                                    <option value="">None (Not Secure)</option>
+                                </select>
+                            </div>
                             <div>
                                 <x-input-label for="username" value="Username" />
                                 <x-text-input id="username" class="block mt-2 w-full" type="text" name="credentials[username]" />
