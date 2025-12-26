@@ -39,7 +39,7 @@
         <main class="flex-1 bg-gray-50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 @if (session('success'))
-                    <div class="mb-4 rounded-md bg-green-100 p-4 border-l-4 border-green-500">
+                    <div class="mb-4 rounded-md bg-green-50 p-4 border-l-4 border-green-500">
                         <div class="flex">
                             <div class="flex-shrink-0">
                                 <svg class="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
@@ -47,7 +47,7 @@
                                 </svg>
                             </div>
                             <div class="ml-3">
-                                <p class="text-sm font-medium text-green-900">
+                                <p class="text-sm font-medium text-gray-900">
                                     {{ session('success') }}
                                 </p>
                             </div>
@@ -56,7 +56,7 @@
                 @endif
 
                 @if (session('error'))
-                    <div class="mb-4 rounded-md bg-red-100 p-4 border-l-4 border-red-500">
+                    <div class="mb-4 rounded-md bg-red-50 p-4 border-l-4 border-red-500">
                         <div class="flex">
                             <div class="flex-shrink-0">
                                 <svg class="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
@@ -64,7 +64,7 @@
                                 </svg>
                             </div>
                             <div class="ml-3">
-                                <p class="text-sm font-medium text-red-900">
+                                <p class="text-sm font-medium text-gray-900">
                                     {{ session('error') }}
                                 </p>
                             </div>
@@ -73,7 +73,7 @@
                 @endif
 
                 @if (session('info'))
-                    <div class="mb-4 rounded-md bg-blue-100 p-4 border-l-4 border-blue-500">
+                    <div class="mb-4 rounded-md bg-blue-50 p-4 border-l-4 border-blue-500">
                         <div class="flex">
                             <div class="flex-shrink-0">
                                 <svg class="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
@@ -81,7 +81,7 @@
                                 </svg>
                             </div>
                             <div class="ml-3">
-                                <p class="text-sm font-medium text-blue-900">
+                                <p class="text-sm font-medium text-gray-900">
                                     {{ session('info') }}
                                 </p>
                             </div>
