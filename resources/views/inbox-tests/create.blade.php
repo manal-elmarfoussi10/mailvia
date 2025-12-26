@@ -29,6 +29,22 @@
                         </div>
 
                         <div>
+                             <x-input-label value="Select Sender" />
+                             <select name="sender_id" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-violet-600 focus:ring-violet-600" required>
+                                 <option value="" disabled selected>-- Choose a Sender --</option>
+                                 @foreach($senders as $sender)
+                                     <option value="{{ $sender->id }}" {{ old('sender_id') == $sender->id ? 'selected' : '' }}>
+                                         {{ $sender->name }} &lt;{{ $sender->email }}&gt;
+                                     </option>
+                                 @endforeach
+                             </select>
+                             <x-input-error :messages="$errors->get('sender_id')" class="mt-2" />
+                             @if($senders->isEmpty())
+                                <p class="text-sm text-red-500 mt-1">You need a verified sender to create a test.</p>
+                             @endif
+                        </div>
+
+                        <div>
                             <x-input-label value="Template to Test" />
                             <select name="template_id" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-violet-600 focus:ring-violet-600">
                                 <option value="">Select a template</option>
