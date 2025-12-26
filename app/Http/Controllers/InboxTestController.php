@@ -84,10 +84,17 @@ class InboxTestController extends Controller
         if (!$sender) {
              return back()->with('error', 'No verified sender selected or found.');
         }
+        
+        // Use provider associated with sender
+        $provider = $sender->provider;
+        $mailer = $provider ? \App\Services\MailService::configureMailer($provider) : null;
+        // If no provider linked, fallback to default (mailer=null means default in facade usually, but we need empty string for 'default' or explicit)
+        // Actually Mail::mailer(null) might fail. If no provider, use default.
+        $mailInstance = $mailer ? Mail::mailer($mailer) : Mail::parent(); 
 
         foreach ($inboxTest->seed_emails as $email) {
             try {
-                Mail::send([], [], function ($message) use ($email, $inboxTest, $template, $sender) {
+                $mailInstance->send([], [], function ($message) use ($email, $inboxTest, $template, $sender) {
                     $message->to($email)
                         ->from($sender->from_email ?? 'test@example.com', $sender->from_name ?? 'Test')
                         ->subject($inboxTest->subject)

@@ -115,7 +115,10 @@ class SendCampaignEmailJob implements ShouldQueue
             }
 
             // Send via Mail facade (configured via custom provider logic)
-            Mail::send([], [], function ($message) use ($sender, $html, $text, $subject) {
+            // Dynamically configure mailer based on provider
+            $mailer = \App\Services\MailService::configureMailer($provider);
+            
+            Mail::mailer($mailer)->send([], [], function ($message) use ($sender, $html, $text, $subject) {
                 $message->to($this->contact->email)
                     ->from($sender->from_email, $sender->from_name)
                     ->subject($subject)
