@@ -47,6 +47,11 @@
                                 <option value="{{ $provider->id }}" {{ old('provider_id') == $provider->id ? 'selected' : '' }}>{{ $provider->name }}</option>
                             @endforeach
                         </select>
+                        @if($providers->isEmpty())
+                            <p class="mt-2 text-xs text-rose-600 font-medium">
+                                No providers found. <a href="{{ route('providers.create') }}" class="underline font-bold">Create your first provider</a> before adding a sender.
+                            </p>
+                        @endif
                         <x-input-error :messages="$errors->get('provider_id')" class="mt-2" />
                     </div>
 
