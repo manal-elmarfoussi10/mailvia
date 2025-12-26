@@ -11,6 +11,11 @@ class UserController extends Controller
     public function index()
     {
         $company = auth()->user()->companies()->first();
+        
+        if (!$company) {
+             return view('users.index', ['users' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20)]);
+        }
+
         $users = $company->users()->paginate(20);
         
         return view('users.index', compact('users'));
@@ -30,6 +35,10 @@ class UserController extends Controller
         ]);
 
         $company = auth()->user()->companies()->first();
+
+        if (!$company) {
+             return back()->withErrors(['company' => 'You must belong to a company to add users.']);
+        }
 
         $user = User::create([
             'name' => $request->name,
