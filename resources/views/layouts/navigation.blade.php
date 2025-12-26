@@ -25,6 +25,13 @@
 
         {{-- Right: user dropdown --}}
         <div class="hidden sm:flex sm:items-center">
+            <a href="{{ route('users.create') }}" class="mr-2 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Add User</span>
+            </a>
+
             <x-dropdown align="right" width="48">
                 <x-slot name="trigger">
                     <button class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium
