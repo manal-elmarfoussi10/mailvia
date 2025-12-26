@@ -35,7 +35,7 @@
             <!-- Add Contact Form -->
             <x-card class="p-6 mb-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Add Contact to List</h3>
-                <form method="POST" action="{{ route('lists.add-contact', $list) }}" class="flex items-end space-x-4">
+                <form method="POST" action="{{ route('lists.add_contact', $list) }}" class="flex items-end space-x-4">
                     @csrf
                     <div class="flex-1">
                         <x-input-label for="email" value="Contact Email" class="text-gray-900 font-semibold" />
@@ -87,7 +87,7 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 text-right">
-                                            <form action="{{ route('lists.remove-contact', [$list, $contact]) }}" method="POST" class="inline" onsubmit="return confirm('Remove this contact from the list?');">
+                                            <form action="{{ route('lists.remove_contact', [$list, $contact]) }}" method="POST" class="inline" onsubmit="return confirm('Remove this contact from the list?');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="text-sm font-medium text-rose-600 hover:text-rose-700 transition">
