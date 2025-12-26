@@ -40,6 +40,7 @@
                     <div class="flex-1">
                         <x-input-label for="email" value="Contact Email" class="text-gray-900 font-semibold" />
                         <x-text-input id="email" class="block mt-2 w-full" type="email" name="email" placeholder="contact@example.com" required />
+                        <x-input-error :messages="$errors->get('email')" class="mt-2" />
                     </div>
                     <x-button-primary type="submit">
                         Add Contact
