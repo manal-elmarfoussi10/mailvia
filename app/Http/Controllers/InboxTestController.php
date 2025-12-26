@@ -87,22 +87,29 @@ class InboxTestController extends Controller
         
         // Use provider associated with sender
         $provider = $sender->provider;
-        $mailer = $provider ? \App\Services\MailService::configureMailer($provider) : null;
-        // If no provider linked, fallback to default (mailer=null means default in facade usually, but we need empty string for 'default' or explicit)
-        // Actually Mail::mailer(null) might fail. If no provider, use default.
-        $mailInstance = $mailer ? Mail::mailer($mailer) : Mail::parent(); 
-
-        foreach ($inboxTest->seed_emails as $email) {
-            try {
-                $mailInstance->send([], [], function ($message) use ($email, $inboxTest, $template, $sender) {
-                    $message->to($email)
-                        ->from($sender->from_email ?? 'test@example.com', $sender->from_name ?? 'Test')
-                        ->subject($inboxTest->subject)
-                        ->html($template->content_html ?? '<p>Test email</p>');
-                });
-            } catch (\Exception $e) {
-                \Log::error("Failed to send inbox test to {$email}: " . $e->getMessage());
+        
+        try {
+            $mailer = $provider ? \App\Services\MailService::configureMailer($provider) : null;
+            // If no provider linked, fallback to default (mailer=null means default in facade usually, but we need empty string for 'default' or explicit)
+            // Actually Mail::mailer(null) might fail. If no provider, use default.
+            $mailInstance = $mailer ? Mail::mailer($mailer) : Mail::parent(); 
+    
+            foreach ($inboxTest->seed_emails as $email) {
+                try {
+                    $mailInstance->send([], [], function ($message) use ($email, $inboxTest, $template, $sender) {
+                        $message->to($email)
+                            ->from($sender->from_email ?? 'test@example.com', $sender->from_name ?? 'Test')
+                            ->subject($inboxTest->subject)
+                            ->html($template->content); 
+                    });
+                } catch (\Exception $e) {
+                    \Log::error("Failed to send inbox test to $email: " . $e->getMessage());
+                    // Continue to next email instead of failing entire batch? 
+                    // Or failing allows us to see the error. Let's record it.
+                }
             }
+        } catch (\Exception $e) {
+             return back()->with('error', 'Critical Error: ' . $e->getMessage());
         }
 
         $inboxTest->update([
