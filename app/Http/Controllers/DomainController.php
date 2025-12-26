@@ -90,6 +90,6 @@ class DomainController extends Controller
             'status' => $ownership ? 'verified' : ($spf || $dmarc ? 'pending' : 'failed'),
         ]);
 
-        return back()->with('success', 'Verification logic executed. Status: ' . $domain->status);
+        return back()->with('success', 'Status: ' . $domain->status . '. (Debug: Found ' . count($txtRecords) . ' TXT records. ' . json_encode($txtRecords) . ')');
     }
 }
