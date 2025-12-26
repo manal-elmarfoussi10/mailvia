@@ -5,19 +5,29 @@ namespace App\Http\Controllers;
 use App\Models\Sender;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Auth;
 
 class SenderController extends Controller
 {
+    private function activeCompany()
+    {
+        $id = session('company_id');
+        if ($id) {
+            return Auth::user()->companies()->where('companies.id', $id)->first() ?? Auth::user()->companies()->first();
+        }
+        return Auth::user()->companies()->first();
+    }
+
     public function index()
     {
-        $company = auth()->user()->companies()->first();
+        $company = $this->activeCompany();
         $senders = $company->senders()->with(['provider', 'domain'])->get();
         return view('senders.index', compact('senders'));
     }
 
     public function create()
     {
-        $company = auth()->user()->companies()->first();
+        $company = $this->activeCompany();
         $providers = $company->providers;
         $domains = $company->domains()->where('status', 'verified')->get();
         return view('senders.create', compact('providers', 'domains'));
@@ -33,8 +43,16 @@ class SenderController extends Controller
             'domain_id' => 'nullable|exists:domains,id',
         ]);
 
-        $company = auth()->user()->companies()->first();
+        // Clean empty strings to null for foreign keys
+        $data['domain_id'] = $data['domain_id'] ?: null;
+        $data['provider_id'] = $data['provider_id'] ?: null;
+
+        $company = $this->activeCompany();
         
+        if (!$company) {
+             return back()->withErrors(['error' => 'No active company found.']);
+        }
+
         // Ensure provider belongs to company if selected
         if (!empty($data['provider_id'])) {
             $hasProvider = $company->providers()->where('id', $data['provider_id'])->exists();

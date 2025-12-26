@@ -11,6 +11,11 @@ class Sender extends Model
     use HasAuditLogs;
     protected $guarded = [];
 
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
+    }
+
     public function domain()
     {
         return $this->belongsTo(Domain::class);
