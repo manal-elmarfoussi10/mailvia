@@ -1,0 +1,6 @@
+email,first_name,last_name,tags
+john.doe@example.com,John,Doe,"customer, vip"
+jane.smith@example.com,Jane,Smith,newsletter
+test.user@example.com,Test,User,"lead, new"
+alice.jones@example.com,Alice,Jones,customer
+bob.brown@example.com,Bob,Brown,lead

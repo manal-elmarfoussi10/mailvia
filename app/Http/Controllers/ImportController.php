@@ -27,6 +27,7 @@ class ImportController extends Controller
     {
         $request->validate([
             'file' => 'required|file|mimes:csv,txt,xlsx|max:10240', // 10MB max
+            'contact_list_id' => 'nullable|exists:contact_lists,id',
         ]);
 
         $company = auth()->user()->companies()->first();
@@ -39,6 +40,7 @@ class ImportController extends Controller
             'file_path' => $path,
             'file_name' => $file->getClientOriginalName(),
             'status' => 'uploaded',
+            'contact_list_id' => $request->contact_list_id,
         ]);
 
         return redirect()->route('imports.edit', $import)->with('success', 'File uploaded. Please map columns.');

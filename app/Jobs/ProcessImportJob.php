@@ -28,6 +28,7 @@ class ProcessImportJob implements ShouldQueue
             $import = $this->import;
             $company = $import->company;
             $mapping = $import->mapping;
+            $listId = $import->contact_list_id;
 
             // Read the file
             $data = Excel::toArray([], $import->file_path);
@@ -86,6 +87,11 @@ class ProcessImportJob implements ShouldQueue
                             $existingTags = $existing->tags ?? [];
                             $existing->update(['tags' => array_unique(array_merge($existingTags, $newTags))]);
                         }
+                        
+                        // Attach to list if specified
+                        if ($listId) {
+                            $existing->lists()->syncWithoutDetaching([$listId]);
+                        }
                     } else {
                         // Create new contact
                         $contactData['status'] = $contactData['status'] ?? 'subscribed';
@@ -95,7 +101,12 @@ class ProcessImportJob implements ShouldQueue
                             $contactData['tags'] = array_map('trim', explode(',', $contactData['tags']));
                         }
                         
-                        $company->contacts()->create($contactData);
+                        $contact = $company->contacts()->create($contactData);
+                        
+                        // Attach to list if specified
+                        if ($listId) {
+                            $contact->lists()->attach($listId);
+                        }
                     }
 
                     $processedCount++;

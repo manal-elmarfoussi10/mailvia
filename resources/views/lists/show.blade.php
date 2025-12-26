@@ -47,6 +47,24 @@
                 </form>
             </x-card>
 
+            <!-- Import CSV Form -->
+            <x-card class="p-6 mb-6">
+                 <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Import Contacts to this List</h3>
+                 </div>
+                 <form method="POST" action="{{ route('imports.store') }}" enctype="multipart/form-data" class="flex items-end gap-4">
+                     @csrf
+                     <input type="hidden" name="contact_list_id" value="{{ $list->id }}">
+                     <div class="flex-1">
+                         <x-input-label for="file" value="Upload CSV" class="text-gray-900 font-semibold" />
+                         <input type="file" name="file" id="file" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100 mt-2" required>
+                     </div>
+                     <x-button-secondary type="submit">
+                         Upload & Map
+                     </x-button-secondary>
+                 </form>
+            </x-card>
+
             <!-- Contacts Table -->
             @if($contacts->isEmpty())
                 <x-card class="p-12">
