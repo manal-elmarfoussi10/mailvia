@@ -34,7 +34,7 @@
                                  <option value="" disabled selected>-- Choose a Sender --</option>
                                  @foreach($senders as $sender)
                                      <option value="{{ $sender->id }}" {{ old('sender_id') == $sender->id ? 'selected' : '' }}>
-                                         {{ $sender->name }} &lt;{{ $sender->email }}&gt;
+                                         {{ $sender->name }} &lt;{{ $sender->email }}&gt; (via {{ $sender->provider->name ?? 'System Default' }})
                                      </option>
                                  @endforeach
                              </select>
