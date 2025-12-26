@@ -41,10 +41,10 @@ class ContactListController extends Controller
 
         // List stats
         $stats = [
-            'total_opens' => \App\Models\CampaignEvent::whereIn('contact_id', $list->contacts()->pluck('contacts.id'))
+            'total_opens' => \App\Models\CampaignEvent::whereIn('contact_id', $list->contacts()->allRelatedIds())
                 ->where('type', 'opened')
                 ->count(),
-            'total_clicks' => \App\Models\CampaignEvent::whereIn('contact_id', $list->contacts()->pluck('contacts.id'))
+            'total_clicks' => \App\Models\CampaignEvent::whereIn('contact_id', $list->contacts()->allRelatedIds())
                 ->where('type', 'clicked')
                 ->count(),
         ];

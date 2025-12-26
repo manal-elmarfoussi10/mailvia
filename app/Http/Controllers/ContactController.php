@@ -55,7 +55,7 @@ class ContactController extends Controller
             ],
             'first_name' => 'nullable|string|max:255',
             'last_name' => 'nullable|string|max:255',
-            'status' => 'required|in:subscribed,unsubscribed,bounced,complained',
+            'status' => 'nullable|in:subscribed,unsubscribed,bounced,complained',
             'tags' => 'nullable|string', // comma separated input
         ]);
 
@@ -66,6 +66,8 @@ class ContactController extends Controller
         } else {
             $data['tags'] = [];
         }
+
+        $data['status'] = $data['status'] ?? 'subscribed';
 
         $company->contacts()->create($data);
 
@@ -117,7 +119,7 @@ class ContactController extends Controller
             ],
             'first_name' => 'nullable|string|max:255',
             'last_name' => 'nullable|string|max:255',
-            'status' => 'required|in:subscribed,unsubscribed,bounced,complained',
+            'status' => 'nullable|in:subscribed,unsubscribed,bounced,complained',
             'tags' => 'nullable|string',
         ]);
 
