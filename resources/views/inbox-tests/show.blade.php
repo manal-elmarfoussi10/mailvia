@@ -216,31 +216,43 @@
                             <div class="p-6 space-y-4">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center">
-                                        <div class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></div>
+                                        <div class="w-2 h-2 rounded-full {{ $authCheck['spf'] ? 'bg-emerald-500' : 'bg-rose-500' }} mr-2"></div>
                                         <span class="text-xs font-medium text-gray-700">SPF Record</span>
                                     </div>
-                                    <x-badge type="success">PASS</x-badge>
+                                    <x-badge :type="$authCheck['spf'] ? 'success' : 'error'">
+                                        {{ $authCheck['spf'] ? 'PASS' : 'FAIL' }}
+                                    </x-badge>
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center">
-                                        <div class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></div>
+                                        <div class="w-2 h-2 rounded-full {{ $authCheck['dkim'] === true ? 'bg-emerald-500' : ($authCheck['dkim'] === false ? 'bg-rose-500' : 'bg-gray-300') }} mr-2"></div>
                                         <span class="text-xs font-medium text-gray-700">DKIM Record</span>
                                     </div>
-                                    <x-badge type="success">PASS</x-badge>
+                                    @if($authCheck['dkim'] === null)
+                                        <x-badge type="neutral">UNKNOWN</x-badge>
+                                    @else
+                                        <x-badge :type="$authCheck['dkim'] ? 'success' : 'error'">
+                                            {{ $authCheck['dkim'] ? 'PASS' : 'FAIL' }}
+                                        </x-badge>
+                                    @endif
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center">
-                                        <div class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></div>
+                                        <div class="w-2 h-2 rounded-full {{ $authCheck['dmarc'] ? 'bg-emerald-500' : 'bg-rose-500' }} mr-2"></div>
                                         <span class="text-xs font-medium text-gray-700">DMARC Record</span>
                                     </div>
-                                    <x-badge type="success">PASS</x-badge>
+                                    <x-badge :type="$authCheck['dmarc'] ? 'success' : 'error'">
+                                        {{ $authCheck['dmarc'] ? 'PASS' : 'FAIL' }}
+                                    </x-badge>
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center">
-                                        <div class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></div>
+                                        <div class="w-2 h-2 rounded-full {{ $authCheck['ssl'] ? 'bg-emerald-500' : 'bg-rose-500' }} mr-2"></div>
                                         <span class="text-xs font-medium text-gray-700">SSL/TLS</span>
                                     </div>
-                                    <x-badge type="success">SECURE</x-badge>
+                                    <x-badge :type="$authCheck['ssl'] ? 'success' : 'error'">
+                                        {{ $authCheck['ssl'] ? 'SECURE' : 'INSECURE' }}
+                                    </x-badge>
                                 </div>
                                 <div class="mt-4 pt-4 border-t border-gray-100">
                                     <div class="flex items-center justify-between">
