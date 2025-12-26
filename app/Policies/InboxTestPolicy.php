@@ -13,7 +13,7 @@ class InboxTestPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,7 +21,7 @@ class InboxTestPolicy
      */
     public function view(User $user, InboxTest $inboxTest): bool
     {
-        return false;
+        return $user->companies->contains($inboxTest->company_id);
     }
 
     /**
@@ -29,7 +29,7 @@ class InboxTestPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -37,7 +37,7 @@ class InboxTestPolicy
      */
     public function update(User $user, InboxTest $inboxTest): bool
     {
-        return false;
+        return $user->companies->contains($inboxTest->company_id);
     }
 
     /**
@@ -45,22 +45,6 @@ class InboxTestPolicy
      */
     public function delete(User $user, InboxTest $inboxTest): bool
     {
-        return false;
-    }
-
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(User $user, InboxTest $inboxTest): bool
-    {
-        return false;
-    }
-
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(User $user, InboxTest $inboxTest): bool
-    {
-        return false;
+        return $user->companies->contains($inboxTest->company_id);
     }
 }
