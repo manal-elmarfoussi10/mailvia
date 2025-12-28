@@ -82,7 +82,7 @@ class InboxTestController extends Controller
         $sender = $inboxTest->sender ?? $inboxTest->company->senders()->first();
 
         if (!$sender) {
-             return back()->with('error', 'No verified sender selected or found.');
+             return back()->with('error', 'No sender selected or found.');
         }
         
         // Use provider associated with sender
@@ -90,38 +90,26 @@ class InboxTestController extends Controller
         $failedCount = 0;
         
         try {
-            $mailerName = $provider ? \App\Services\MailService::configureMailer($provider) : null;
-            // Use the configured mailer or fallback to default
-            $mailInstance = $mailerName ? Mail::mailer($mailerName) : Mail::to([]); // Fallback to empty if no provider? Or default?
-            
-            if (!$mailerName) {
-                 // Fallback to system default if no provider specific config
-                 $mailInstance = Mail::mailer(config('mail.default'));
-            }
+            // Configure mailer with provider or use default
+            $mailerName = $provider
+                ? \App\Services\MailService::configureMailer($provider)
+                : config('mail.default');
+
+            $mailInstance = Mail::mailer($mailerName);
     
             foreach ($inboxTest->seed_emails as $email) {
                 try {
-                    $mailInstance->to($email)->send(new \App\Mail\InboxTestMail($inboxTest, $template, $sender)); // Using Mailable is better but inline is ok for now if we keep inline
-                    
-                    // We need to support the inline closure style if we don't have a Mailable class
-                    // Re-implementing inline send for now to match previous style but with correct instance
-                    /* 
                     $mailInstance->send([], [], function ($message) use ($email, $inboxTest, $template, $sender) {
                         $message->to($email)
-                            ->from($sender->from_email ?? 'test@example.com', $sender->from_name ?? 'Test')
+                            ->from(
+                                $sender->email ?? 'admin@mailvia.cloud',
+                                $sender->name ?? 'Mailvia'
+                            )
                             ->subject($inboxTest->subject)
-                            ->html($template->content); 
-                    });
-                    */
-                    // Actually, let's keep the closure for minimal refactor impact, but using $mailInstance correctly
-                     $mailInstance->send([], [], function ($message) use ($email, $inboxTest, $template, $sender) {
-                        $message->to($email)
-                            ->from($sender->from_email ?? 'test@example.com', $sender->from_name ?? 'Test')
-                            ->subject($inboxTest->subject)
-                            ->html($template->content ?? 'Test Email'); 
+                            ->html($template?->content_html ?? $template?->content_text ?? '<p>Test Email</p>');
                     });
 
-                    \Log::info("Inbox Test sent to $email via " . ($mailerName ?? 'default'));
+                    \Log::info("Inbox Test sent to $email via " . $mailerName);
                 } catch (\Exception $e) {
                     \Log::error("Failed to send inbox test to $email: " . $e->getMessage());
                     // Record failure but don't stop loop
