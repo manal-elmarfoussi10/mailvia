@@ -45,17 +45,35 @@ class InboxTestController extends Controller
         // Fetch seed emails
         $seedList = SeedList::with('emails')->findOrFail($data['seed_list_id']);
         $seedEmails = $seedList->emails->pluck('email')->toArray();
-
-        $test = $company->inboxTests()->create([
-            'name' => $data['name'],
+        
+        // Debug Log
+        \Log::info("InboxTest Creation Debug", [
             'seed_list_id' => $data['seed_list_id'],
-            'template_id' => $data['template_id'],
-            'subject' => $data['subject'],
+            'seed_emails_count' => count($seedEmails),
             'from_name' => $data['from_name'],
-            'from_email' => $data['from_email'],
-            'status' => 'draft',
-            'seed_emails' => $seedEmails,
+            'from_email' => $data['from_email']
         ]);
+
+        if (empty($seedEmails)) {
+            return back()->with('error', 'The selected seed list has no emails.');
+        }
+
+        try {
+            $test = $company->inboxTests()->create([
+                'name' => $data['name'],
+                // 'seed_list_id' => $data['seed_list_id'], // Removed as column doesn't exist
+                'template_id' => $data['template_id'],
+                'subject' => $data['subject'],
+                'from_name' => $data['from_name'],
+                'from_email' => $data['from_email'],
+                'status' => 'draft',
+                'seed_emails' => $seedEmails,
+                'sender_id' => null, // Explicitly set to null if column exists
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("InboxTest Creation Failed: " . $e->getMessage());
+            return back()->with('error', 'Creation failed: ' . $e->getMessage());
+        }
 
         return redirect()->route('inbox-tests.show', $test)->with('success', 'Inbox test created.');
     }
