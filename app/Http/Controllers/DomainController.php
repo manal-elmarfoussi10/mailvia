@@ -38,8 +38,13 @@ class DomainController extends Controller
 
     public function show(Domain $domain)
     {
-        $this->authorize('view', $domain->company); // simple check
-        return view('domains.show', compact('domain'));
+        $this->authorize('view', $domain->company); 
+        
+        // ENV-only Check: Does the global mail host look like SES?
+        $mailHost = config('mail.mailers.smtp.host') ?? env('MAIL_HOST') ?? '';
+        $isSesEnv = str_contains($mailHost, 'amazonaws.com');
+
+        return view('domains.show', compact('domain', 'isSesEnv'));
     }
 
     public function destroy(Domain $domain)
@@ -108,6 +113,12 @@ class DomainController extends Controller
                     break;
                 }
             }
+        }
+
+        // If the domain uses SES (detected via ENV), store any provided DKIM tokens
+        // We use $request->has('dkim_tokens') as the primary signal
+        if ($request->has('dkim_tokens')) {
+            $domain->dkim_tokens = json_encode($request->input('dkim_tokens'));
         }
 
         $domain->update([

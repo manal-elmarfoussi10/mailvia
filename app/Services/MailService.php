@@ -11,27 +11,34 @@ class MailService
      * Configure a dynamic mailer based on the provider settings.
      *
      * @param Provider $provider
-     * @return string The mailer driver name to use (e.g., 'dynamic_provider')
+     * @return string The mailer driver name to use (e.g., 'provider_1')
      */
     public static function configureMailer(Provider $provider): string
     {
         $credentials = $provider->credentials;
         $driver = $provider->type;
-        $configKey = 'mail.mailers.dynamic_provider';
+        
+        // Use unique mailer name per provider to avoid conflicts
+        $mailerName = "provider_{$provider->id}";
+        $configKey = "mail.mailers.{$mailerName}";
 
         switch ($driver) {
             case 'ses':
+            case 'amazon_ses':
+                // Amazon SES via SMTP (not AWS SDK)
+                // This allows using SES SMTP credentials instead of AWS API keys
+                $region = $credentials['region'] ?? 'us-east-1';
+                $host = $credentials['host'] ?? "email-smtp.{$region}.amazonaws.com";
+                
                 Config::set($configKey, [
-                    'transport' => 'ses',
-                    'key' => $credentials['key'] ?? '',
-                    'secret' => $credentials['secret'] ?? '',
-                    'region' => $credentials['region'] ?? 'us-east-1',
-                ]);
-                // Ensure AWS service config is also set if using standard Laravel SES driver
-                Config::set('services.ses', [
-                    'key' => $credentials['key'] ?? '',
-                    'secret' => $credentials['secret'] ?? '',
-                    'region' => $credentials['region'] ?? 'us-east-1',
+                    'transport' => 'smtp',
+                    'host' => $host,
+                    'port' => (int)($credentials['port'] ?? 587),
+                    'encryption' => $credentials['encryption'] ?? 'tls',
+                    'username' => $credentials['username'] ?? '',
+                    'password' => $credentials['password'] ?? '',
+                    'timeout' => 30,
+                    'local_domain' => env('MAIL_EHLO_DOMAIN'),
                 ]);
                 break;
 
@@ -82,10 +89,10 @@ class MailService
                 break;
 
             default:
-                // Fallback or throw error? For now, fallback to default 'smtp'
+                // Fallback to default mailer
                 return Config::get('mail.default');
         }
 
-        return 'dynamic_provider';
+        return $mailerName;
     }
 }

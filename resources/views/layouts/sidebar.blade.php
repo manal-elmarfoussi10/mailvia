@@ -36,7 +36,8 @@
             {{-- INFRASTRUCTURE --}}
             <div class="px-3 py-2 text-xs font-semibold text-white/40 uppercase tracking-wider">Infrastructure</div>
 
-            <!-- Providers -->
+            <!-- Providers (Hidden for ENV-only mode) -->
+            <!--
             <a href="{{ route('providers.index') }}" 
                class="group flex items-center pl-6 pr-3 py-2 text-sm font-medium rounded-xl {{ request()->routeIs('providers.*') ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white' }} transition-all duration-150">
                 <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -44,6 +45,7 @@
                 </svg>
                 Providers
             </a>
+            -->
 
             <!-- Senders -->
             <a href="{{ route('senders.index') }}" 

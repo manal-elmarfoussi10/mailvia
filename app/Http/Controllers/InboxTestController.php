@@ -81,55 +81,62 @@ class InboxTestController extends Controller
         $template = $inboxTest->template;
         $sender = $inboxTest->sender ?? $inboxTest->company->senders()->first();
 
-        if (!$sender) {
-             return back()->with('error', 'No sender selected or found.');
-        }
+        // Warning: We are using ENV-only mailer, ignoring $sender->provider dynamic config
+        // But we still use Sender for From Name/Email
         
-        // Use provider associated with sender
-        $provider = $sender->provider;
         $failedCount = 0;
-        
-        try {
-            // Configure mailer with provider or use default
-            $mailerName = $provider
-                ? \App\Services\MailService::configureMailer($provider)
-                : config('mail.default');
+        $firstError = null;
 
-            $mailInstance = Mail::mailer($mailerName);
-    
+        try {
+            // ENV-ONLY Mode: Use the default mailer configured in .env
+            $mailer = Mail::mailer(config('mail.default'));
+            
+            // Log configuration for debugging (masking password)
+            $config = config('mail.mailers.smtp');
+            \Log::info("InboxTest: Pre-flight check", [
+                'host' => $config['host'] ?? 'N/A',
+                'port' => $config['port'] ?? 'N/A',
+                'encryption' => $config['encryption'] ?? 'N/A',
+                'username' => $config['username'] ?? 'N/A'
+            ]);
+
             foreach ($inboxTest->seed_emails as $email) {
                 try {
-                    $mailInstance->send([], [], function ($message) use ($email, $inboxTest, $template, $sender) {
+                    $mailer->send([], [], function ($message) use ($email, $inboxTest, $template, $sender) {
                         $message->to($email)
                             ->from(
-                                $sender->email ?? 'admin@mailvia.cloud',
-                                $sender->name ?? 'Mailvia'
+                                $sender->email ?? config('mail.from.address'),
+                                $sender->name ?? config('mail.from.name')
                             )
                             ->subject($inboxTest->subject)
                             ->html($template?->content_html ?? $template?->content_text ?? '<p>Test Email</p>');
                     });
 
-                    \Log::info("Inbox Test sent to $email via " . $mailerName);
+                    \Log::info("InboxTest: Sent successfully to $email");
                 } catch (\Exception $e) {
-                    \Log::error("Failed to send inbox test to $email: " . $e->getMessage());
-                    // Record failure but don't stop loop
                     $failedCount++;
+                    if (!$firstError) $firstError = $e->getMessage();
+                    \Log::error("InboxTest: Failed sending to $email. Error: " . $e->getMessage());
                 }
             }
         } catch (\Throwable $e) {
-             \Log::error("Critical Error in InboxTest sending: " . $e->getMessage());
-             return back()->with('error', 'Critical Error: ' . $e->getMessage());
+            \Log::error("InboxTest: Critical Loop Error: " . $e->getMessage());
+            return back()->with('error', 'Critical Error: ' . $e->getMessage());
+        }
+
+        if ($failedCount === count($inboxTest->seed_emails)) {
+            $inboxTest->update(['status' => 'failed', 'sent_at' => now()]);
+            return back()->with('error', 'All emails failed to send. First error: ' . $firstError);
         }
 
         $inboxTest->update([
-            'status' => $failedCount === count($inboxTest->seed_emails) ? 'failed' : 'sent',
+            'status' => 'sent',
             'sent_at' => now(),
-            // Store simple stats about immediate failures
             'results' => ['sent_count' => count($inboxTest->seed_emails) - $failedCount, 'failed_count' => $failedCount]
         ]);
 
         return redirect()->route('inbox-tests.show', $inboxTest)
-            ->with('success', 'Test emails sent! Results will be tracked via webhooks or manual entry.');
+            ->with('success', 'Test emails sent! (Success: ' . (count($inboxTest->seed_emails) - $failedCount) . ', Failed: ' . $failedCount . ')');
     }
 
     public function updateResults(Request $request, InboxTest $inboxTest)

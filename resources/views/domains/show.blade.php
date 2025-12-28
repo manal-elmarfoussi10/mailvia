@@ -76,14 +76,22 @@
                     <x-card title="2. SPF (Sender Policy Framework)">
                         <p class="text-sm text-gray-500 mb-4 italic">SPF prevents spoofing by specifying which mail servers are permitted to send email on behalf of your domain.</p>
                         <div class="bg-gray-50 rounded-xl p-4 font-mono text-sm border border-gray-100 mb-4">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-gray-400">Type</span>
-                                <span>TXT</span>
-                            </div>
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-gray-400">Value</span>
-                                <span class="text-gray-800 break-all">v=spf1 include:amazonses.com ~all</span>
-                            </div>
+                            @if(isset($isSesEnv) && $isSesEnv)
+                                <div class="mt-6">
+                                    <h4 class="text-md font-semibold mb-2">SES DNS Configuration (via ENV)</h4>
+                                    <p class="mb-1"><strong>SPF Record (add as TXT):</strong></p>
+                                    <pre class="bg-gray-100 p-2 rounded">v=spf1 include:amazonses.com ~all</pre>
+                                </div>
+                            @else
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-gray-400">Type</span>
+                                    <span>TXT</span>
+                                </div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-gray-400">Value</span>
+                                    <span class="text-gray-800 break-all">v=spf1 include:amazonses.com ~all</span>
+                                </div>
+                            @endif
                         </div>
                         <div class="flex items-center gap-2">
                             <x-badge :type="$domain->spf_verified ? 'success' : 'warning'">

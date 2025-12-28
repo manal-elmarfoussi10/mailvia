@@ -32,7 +32,11 @@ class ProviderController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|in:smtp,ses,mailgun,postmark',
-            'credentials' => 'required|array', // We'll expect array from form (e.g. credentials[host], credentials[key])
+            'credentials' => 'required|array',
+            // SES specific required fields
+            'credentials.region' => 'required_if:type,ses|string',
+            'credentials.key' => 'required_if:type,ses|string',
+            'credentials.secret' => 'required_if:type,ses|string',
         ]);
 
         $company = auth()->user()->companies()->first();
@@ -56,6 +60,10 @@ class ProviderController extends Controller
             'name' => 'required|string|max:255',
             'type' => 'required|in:smtp,ses,mailgun,postmark',
             'credentials' => 'required|array',
+            // SES specific required fields for update
+            'credentials.region' => 'required_if:type,ses|string',
+            'credentials.key' => 'required_if:type,ses|string',
+            'credentials.secret' => 'required_if:type,ses|string',
         ]);
 
         $provider->update($data);

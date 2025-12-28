@@ -21,7 +21,10 @@ class Domain extends Model
         'dmarc_verified',
     ];
 
+    protected $guarded = [];
+
     protected $casts = [
+        'dkim_tokens' => 'array',
         'spf_verified' => 'boolean',
         'dkim_verified' => 'boolean',
         'dmarc_verified' => 'boolean',
