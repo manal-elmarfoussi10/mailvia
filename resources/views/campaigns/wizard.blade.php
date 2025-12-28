@@ -1,34 +1,43 @@
-<div x-data="{ 
-    step: 1, 
+<div x-data="{
+    step: 1,
     totalSteps: 6,
     formData: {
-        name: "{{ old('name', $campaign->name ?? '') }}",
-        subject: "{{ old('subject', $campaign->subject ?? '') }}",
-        preheader: "{{ old('preheader', $campaign->preheader ?? '') }}",
-        template_id: "{{ old('template_id', $campaign->template_id ?? '') }}",
-        from_name: "{{ old('from_name', $campaign->from_name ?? config('mail.from.name')) }}",
-        from_email: "{{ old('from_email', $campaign->from_email ?? config('mail.from.address')) }}",
-        audience_type: "{{ old('audience.type', $campaign->audience['type'] ?? 'all') }}",
+        name: '{{ old('name', $campaign->name ?? '') }}',
+        description: '{{ old('description', $campaign->description ?? '') }}',
+        audience_type: '{{ old('audience.type', $campaign->audience['type'] ?? 'lists') }}',
         audience_ids: @json(old('audience.ids', $campaign->audience['ids'] ?? [])),
-        exclude_suppressed: {{ old('audience.exclude_suppressed', $campaign->audience['exclude_suppressed'] ?? 1) ? 'true' : 'false' }},
-        throttle_rate: {{ old('throttle_rate', $campaign->throttle_rate ?? 10) }},
-        throttle_concurrency: {{ old('throttle_concurrency', $campaign->throttle_concurrency ?? 3) }},
-        scheduled_at: "{{ old('scheduled_at', $campaign->scheduled_at ? $campaign->scheduled_at->format('Y-m-d\TH:i') : '') }}",
-        is_ab_test: {{ old('is_ab_test', $campaign->is_ab_test ?? false) ? 'true' : 'false' }},
-        ab_variations: @json(old('ab_variations', $campaign->ab_variations ?? [])),
-        ab_winner_criteria: "{{ old('ab_winner_criteria', $campaign->ab_winner_criteria ?? 'open_rate') }}",
-        ab_test_duration: {{ old('ab_test_duration', $campaign->ab_test_duration ?? 24) }},
-        ab_test_sample_size: {{ old('ab_test_sample_size', $campaign->ab_test_sample_size ?? 25) }},
+        from_name: '{{ old('from_name', $campaign->from_name ?? '') }}',
+        from_email: '{{ old('from_email', $campaign->from_email ?? '') }}',
+        reply_to: '{{ old('reply_to', $campaign->reply_to ?? '') }}',
+        template_id: '{{ old('template_id', $campaign->template_id ?? '') }}',
+        subject: '{{ old('subject', $campaign->subject ?? '') }}',
+        eps: {{ old('eps', $campaign->eps ?? 10) }},
+        warmup: {{ old('warmup', $campaign->warmup ?? false) ? 'true' : 'false' }},
+        batch_size: {{ old('batch_size', $campaign->batch_size ?? 100) }},
+        scheduled_at: '{{ old('scheduled_at', $campaign->scheduled_at ? $campaign->scheduled_at->format('Y-m-d\TH:i') : '') }}',
+        test_emails: @json(old('test_emails', []))
     },
     nextStep() { if(this.step < this.totalSteps) this.step++; },
-    prevStep() { if(this.step > 1) this.step--; }
+    prevStep() { if(this.step > 1) this.step--; },
+    getAudienceCount() {
+        if (this.formData.audience_type === 'all') return 'All contacts';
+        if (this.formData.audience_type === 'lists') {
+            const selectedLists = @json($lists->whereIn('id', old('audience.ids', $campaign->audience['ids'] ?? []))->pluck('name', 'id'));
+            return Object.values(selectedLists).join(', ');
+        }
+        if (this.formData.audience_type === 'segments') {
+            const selectedSegments = @json($segments->whereIn('id', old('audience.ids', $campaign->audience['ids'] ?? []))->pluck('name', 'id'));
+            return Object.values(selectedSegments).join(', ');
+        }
+        return 'No audience selected';
+    }
 }">
     <!-- Progress Bar -->
     <div class="mb-8">
         <div class="flex items-center justify-between mb-2">
-            @foreach(['Audience', 'Content', 'Provider', 'Throttling', 'Schedule', 'Review'] as $i => $label)
+            @foreach(['Basics', 'Audience', 'Sender & Content', 'Throttling', 'Schedule', 'Review'] as $i => $label)
                 <div class="flex flex-col items-center">
-                    <div :class="step > {{ $i + 1 }} ? 'bg-emerald-500' : (step == {{ $i + 1 }} ? 'bg-violet-600' : 'bg-gray-200')" 
+                    <div :class="step > {{ $i + 1 }} ? 'bg-emerald-500' : (step == {{ $i + 1 }} ? 'bg-violet-600' : 'bg-gray-200')"
                          class="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold transition-colors">
                         <template x-if="step > {{ $i + 1 }}">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -53,11 +62,29 @@
         @if($method ?? false) @method($method) @endif
 
         <input type="hidden" name="name" x-model="formData.name">
+        <input type="hidden" name="description" x-model="formData.description">
 
-        <!-- Step 1: Audience -->
+        <!-- Step 1: Basics -->
         <div x-show="step == 1">
+            <h3 class="text-xl font-bold text-gray-900 mb-6">Campaign Basics</h3>
+
+            <div class="space-y-6">
+                <div>
+                    <x-input-label for="name" value="Campaign Name" />
+                    <x-text-input id="name" name="name" class="block mt-1 w-full" x-model="formData.name" placeholder="E.g. Summer Sale 2025" />
+                </div>
+
+                <div>
+                    <x-input-label for="description" value="Description (Optional)" />
+                    <textarea id="description" name="description" rows="3" class="block mt-1 w-full border-gray-300 focus:border-violet-600 focus:ring-violet-600 rounded-md shadow-sm" x-model="formData.description" placeholder="Brief description of this campaign"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Audience -->
+        <div x-show="step == 2">
             <h3 class="text-xl font-bold text-gray-900 mb-6">Select Your Audience</h3>
-            
+
             <div class="space-y-6">
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-3">Who should receive this campaign?</label>
@@ -104,124 +131,16 @@
                     </div>
                 </div>
 
-                <div class="flex items-center p-4 bg-amber-50 text-amber-800 rounded-xl border border-amber-200">
-                    <input type="checkbox" name="audience[exclude_suppressed]" value="1" x-model="formData.exclude_suppressed" class="rounded border-amber-300 text-amber-600 focus:ring-amber-600">
-                    <span class="ml-2 text-sm font-medium">Auto-exclude suppressed and unsubscribed contacts (Recommended)</span>
+                <div class="p-4 bg-blue-50 text-blue-800 rounded-xl border border-blue-200">
+                    <strong>Note:</strong> Suppressed and unsubscribed contacts will be automatically excluded from this campaign.
                 </div>
             </div>
         </div>
 
-        <!-- Step 2: Content -->
-        <div x-show="step == 2">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-xl font-bold text-gray-900">Email Content</h3>
-                <label class="flex items-center cursor-pointer">
-                    <div class="relative">
-                        <input type="checkbox" class="sr-only" x-model="formData.is_ab_test" name="is_ab_test" value="1">
-                        <div class="block bg-gray-200 w-10 h-6 rounded-full" :class="formData.is_ab_test && 'bg-violet-600'"></div>
-                        <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition" :style="formData.is_ab_test ? 'transform: translateX(100%)' : ''"></div>
-                    </div>
-                    <div class="ml-3 text-sm font-black text-gray-400 uppercase tracking-widest" :class="formData.is_ab_test && 'text-violet-600'">
-                        A/B Testing
-                    </div>
-                </label>
-            </div>
-            
-            <div class="space-y-6">
-                <!-- Control Version -->
-                <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                    <div class="flex items-center gap-2 mb-4">
-                        <span class="w-6 h-6 rounded-full bg-gray-900 text-white text-[10px] font-black flex items-center justify-center">A</span>
-                        <span class="text-xs font-black uppercase tracking-widest text-gray-900">Control Version</span>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <x-input-label for="subject" value="Subject Line" class="text-[10px] mb-1" />
-                            <x-text-input id="subject" name="subject" class="block w-full text-sm font-semibold" type="text" x-model="formData.subject" placeholder="What your recipients will see" />
-                        </div>
-                        <div>
-                            <x-input-label for="preheader" value="Preheader Text" class="text-[10px] mb-1" />
-                            <x-text-input id="preheader" name="preheader" class="block w-full text-sm font-semibold" type="text" x-model="formData.preheader" placeholder="The teaser text" />
-                        </div>
-                        <div>
-                            <x-input-label value="Control Template" class="text-[10px] mb-1" />
-                            <select name="template_id" x-model="formData.template_id" class="w-full text-sm font-semibold rounded-xl border-gray-200">
-                                @foreach($templates as $template)
-                                    <option value="{{ $template->id }}">{{ $template->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Variations -->
-                <div x-show="formData.is_ab_test" class="space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
-                    <template x-for="(v, vIndex) in formData.ab_variations" :key="vIndex">
-                        <div class="p-4 border-2 border-dashed border-gray-200 rounded-2xl relative">
-                            <button type="button" @click="formData.ab_variations.splice(vIndex, 1)" class="absolute -top-2 -right-2 w-6 h-6 bg-rose-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-rose-700">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
-
-                            <div class="flex items-center gap-2 mb-4">
-                                <span class="w-6 h-6 rounded-full bg-violet-600 text-white text-[10px] font-black flex items-center justify-center" x-text="String.fromCharCode(66 + vIndex)"></span>
-                                <span class="text-xs font-black uppercase tracking-widest text-violet-600">Variation Version</span>
-                            </div>
-
-                            <div class="space-y-4">
-                                <div>
-                                    <x-input-label value="Variation Subject" class="text-[10px] mb-1" />
-                                    <input type="text" :name="'ab_variations['+vIndex+'][subject]'" x-model="v.subject" 
-                                           class="w-full text-sm font-semibold rounded-xl border-gray-200" placeholder="Alternate Subject Line">
-                                </div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <x-input-label value="Variation Template" class="text-[10px] mb-1" />
-                                        <select :name="'ab_variations['+vIndex+'][template_id]'" x-model="v.template_id" class="w-full text-sm font-semibold rounded-xl border-gray-200">
-                                            @foreach($templates as $template)
-                                                <option value="{{ $template->id }}">{{ $template->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <x-input-label value="Success Metric" class="text-[10px] mb-1" />
-                                        <select name="ab_winner_criteria" x-model="formData.ab_winner_criteria" class="w-full text-sm font-semibold rounded-xl border-gray-200">
-                                            <option value="open_rate">Highest Open Rate</option>
-                                            <option value="click_rate">Highest Click Rate</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-
-                    <button type="button" @click="formData.ab_variations.push({ subject: formData.subject, template_id: formData.template_id })"
-                            x-show="formData.ab_variations.length < 3"
-                            class="w-full py-3 border-2 border-dashed border-gray-200 rounded-2xl text-xs font-black text-gray-400 uppercase tracking-widest hover:border-violet-300 hover:text-violet-600 transition">
-                        + Add Variation
-                    </button>
-                    
-                    <div class="grid grid-cols-2 gap-6 p-4 bg-indigo-50 rounded-2xl text-indigo-900">
-                        <div>
-                            <x-input-label value="Test Sample Size (%)" class="text-indigo-900 text-[10px] mb-1" />
-                            <input type="number" name="ab_test_sample_size" x-model="formData.ab_test_sample_size" class="w-full text-sm font-bold bg-white rounded-xl border-indigo-100">
-                        </div>
-                        <div>
-                            <x-input-label value="Test Duration (Hours)" class="text-indigo-900 text-[10px] mb-1" />
-                            <input type="number" name="ab_test_duration" x-model="formData.ab_test_duration" class="w-full text-sm font-bold bg-white rounded-xl border-indigo-100">
-                        </div>
-                        <p class="col-span-2 text-[10px] font-medium opacity-70 italic">
-                            The test will run on <span x-text="formData.ab_test_sample_size"></span>% of your audience. After <span x-text="formData.ab_test_duration"></span> hours, the winner will be sent to the remaining contacts.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Step 3: From Settings -->
+        <!-- Step 3: Sender & Content -->
         <div x-show="step == 3">
-            <h3 class="text-xl font-bold text-gray-900 mb-6">Sender Identity</h3>
-            
+            <h3 class="text-xl font-bold text-gray-900 mb-6">Sender & Content</h3>
+
             <div class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -230,11 +149,32 @@
                     </div>
                     <div>
                         <x-input-label value="From Email" />
-                         <x-text-input name="from_email" x-model="formData.from_email" class="mt-1 block w-full" placeholder="E.g. hello@yourdomain.com" />
+                        <x-text-input name="from_email" x-model="formData.from_email" class="mt-1 block w-full" placeholder="E.g. hello@yourdomain.com" />
                     </div>
                 </div>
+
+                <div>
+                    <x-input-label value="Reply-To (Optional)" />
+                    <x-text-input name="reply_to" x-model="formData.reply_to" class="mt-1 block w-full" placeholder="E.g. replies@yourdomain.com" />
+                </div>
+
+                <div>
+                    <x-input-label value="Email Template" />
+                    <select name="template_id" x-model="formData.template_id" class="mt-1 block w-full border-gray-300 focus:border-violet-600 focus:ring-violet-600 rounded-md shadow-sm">
+                        <option value="">Select a template...</option>
+                        @foreach($templates as $template)
+                            <option value="{{ $template->id }}">{{ $template->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <x-input-label value="Subject Line" />
+                    <x-text-input name="subject" x-model="formData.subject" class="mt-1 block w-full" placeholder="What your recipients will see" />
+                </div>
+
                 <div class="p-4 bg-blue-50 text-blue-800 rounded-xl border border-blue-200 text-sm">
-                    <strong>Note:</strong> Emails will be sent using the global verified SES configuration. Ensure this "From Email" is authorized or aligns with your domain settings.
+                    <strong>Note:</strong> Emails will be sent using SES SMTP. Ensure your "From Email" is authorized in your SES settings.
                 </div>
             </div>
         </div>
@@ -281,8 +221,8 @@
 
         <!-- Step 5: Schedule -->
         <div x-show="step == 5">
-            <h3 class="text-xl font-bold text-gray-900 mb-6">Scheduled Delivery</h3>
-            
+            <h3 class="text-xl font-bold text-gray-900 mb-6">Schedule Delivery</h3>
+
             <div class="space-y-6">
                 <div class="flex flex-col gap-4">
                     <label class="flex items-center p-4 border rounded-xl cursor-pointer" :class="!formData.scheduled_at ? 'border-violet-600 bg-violet-50' : 'border-gray-200'">
@@ -309,7 +249,7 @@
         <!-- Step 6: Review -->
         <div x-show="step == 6">
             <h3 class="text-xl font-bold text-gray-900 mb-6">Final Review</h3>
-            
+
             <div class="bg-gray-50 rounded-2xl p-6 space-y-4">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -320,22 +260,51 @@
                         <span class="text-xs font-semibold text-gray-500 uppercase">Schedule</span>
                         <p class="font-medium text-gray-900" x-text="formData.scheduled_at ? formData.scheduled_at : 'Immediate'"></p>
                     </div>
-                    <div class="col-span-2 border-t pt-4">
+                    <div>
+                        <span class="text-xs font-semibold text-gray-500 uppercase">From</span>
+                        <p class="font-medium text-gray-900" x-text="formData.from_name + ' <' + formData.from_email + '>'"></p>
+                    </div>
+                    <div>
                         <span class="text-xs font-semibold text-gray-500 uppercase">Subject</span>
                         <p class="font-medium text-gray-900" x-text="formData.subject"></p>
                     </div>
                     <div>
                         <span class="text-xs font-semibold text-gray-500 uppercase">Audience</span>
-                        <p class="font-medium text-gray-900" x-text="formData.audience_type.toUpperCase()"></p>
+                        <p class="font-medium text-gray-900" x-text="getAudienceCount()"></p>
                     </div>
                     <div>
                         <span class="text-xs font-semibold text-gray-500 uppercase">Speed</span>
-                        <p class="font-medium text-gray-900" x-text="formData.throttle_rate + ' messages/sec'"></p>
+                        <p class="font-medium text-gray-900" x-text="formData.eps + ' messages/sec'"></p>
+                    </div>
+                </div>
+
+                <!-- Test Emails -->
+                <div class="border-t pt-4">
+                    <span class="text-xs font-semibold text-gray-500 uppercase">Test Emails</span>
+                    <div class="mt-2">
+                        <template x-for="(email, index) in formData.test_emails" :key="index">
+                            <span class="inline-block bg-violet-100 text-violet-800 text-xs px-2 py-1 rounded mr-2 mb-2" x-text="email"></span>
+                        </template>
+                        <template x-if="formData.test_emails.length === 0">
+                            <p class="text-sm text-gray-500 italic">No test emails added</p>
+                        </template>
                     </div>
                 </div>
 
                 <!-- Warnings -->
                 <div class="mt-6 space-y-2">
+                    <template x-if="!formData.name">
+                        <div class="flex items-center text-rose-600 text-sm">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            Campaign name is missing
+                        </div>
+                    </template>
+                    <template x-if="!formData.from_name || !formData.from_email">
+                        <div class="flex items-center text-rose-600 text-sm">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            From name and email are required
+                        </div>
+                    </template>
                     <template x-if="!formData.subject">
                         <div class="flex items-center text-rose-600 text-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
@@ -346,6 +315,18 @@
                         <div class="flex items-center text-rose-600 text-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                             No template selected
+                        </div>
+                    </template>
+                    <template x-if="formData.audience_type === 'lists' && formData.audience_ids.length === 0">
+                        <div class="flex items-center text-rose-600 text-sm">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            No lists selected for audience
+                        </div>
+                    </template>
+                    <template x-if="formData.audience_type === 'segments' && formData.audience_ids.length === 0">
+                        <div class="flex items-center text-rose-600 text-sm">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            No segments selected for audience
                         </div>
                     </template>
                 </div>

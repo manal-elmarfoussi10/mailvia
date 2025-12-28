@@ -14,6 +14,60 @@ class InboxTest extends Model
         'sent_at' => 'datetime',
     ];
 
+    protected function serializeSeedEmails($value)
+    {
+        if (is_array($value)) {
+            return json_encode($value);
+        }
+        return $value;
+    }
+
+    protected function unserializeSeedEmails($value)
+    {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+        return is_array($value) ? $value : [];
+    }
+
+    public function setSeedEmailsAttribute($value)
+    {
+        $this->attributes['seed_emails'] = $this->serializeSeedEmails($value);
+    }
+
+    public function getSeedEmailsAttribute($value)
+    {
+        return $this->unserializeSeedEmails($value);
+    }
+
+    public function setResultsAttribute($value)
+    {
+        $this->attributes['results'] = $this->serializeResults($value);
+    }
+
+    public function getResultsAttribute($value)
+    {
+        return $this->unserializeResults($value);
+    }
+
+    protected function serializeResults($value)
+    {
+        if (is_array($value)) {
+            return json_encode($value);
+        }
+        return $value;
+    }
+
+    protected function unserializeResults($value)
+    {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+        return is_array($value) ? $value : [];
+    }
+
     public function company()
     {
         return $this->belongsTo(Company::class);
@@ -31,14 +85,15 @@ class InboxTest extends Model
 
     public function getPlacementStats(): array
     {
-        $results = $this->results ?? [];
-        $total = count($this->seed_emails ?? []);
-        
-        if ($total === 0) return ['inbox' => 0, 'spam' => 0, 'missing' => 0];
+        $results = is_array($this->results) ? $this->results : [];
+        $seedEmails = is_array($this->seed_emails) ? $this->seed_emails : [];
+        $total = count($seedEmails);
+
+        if ($total === 0) return ['inbox' => 0, 'spam' => 0, 'missing' => 0, 'counts' => ['inbox' => 0, 'spam' => 0, 'missing' => 0, 'total' => 0]];
 
         $inbox = 0;
         $spam = 0;
-        
+
         foreach ($results as $email => $placement) {
             if ($placement === 'inbox') $inbox++;
             elseif ($placement === 'spam') $spam++;
@@ -47,9 +102,9 @@ class InboxTest extends Model
         $missing = $total - ($inbox + $spam);
 
         return [
-            'inbox' => round(($inbox / $total) * 100),
-            'spam' => round(($spam / $total) * 100),
-            'missing' => round(($missing / $total) * 100),
+            'inbox' => $total > 0 ? round(($inbox / $total) * 100) : 0,
+            'spam' => $total > 0 ? round(($spam / $total) * 100) : 0,
+            'missing' => $total > 0 ? round(($missing / $total) * 100) : 0,
             'counts' => [
                 'inbox' => $inbox,
                 'spam' => $spam,
@@ -65,9 +120,10 @@ class InboxTest extends Model
         // For simplicity, let's group by domain of the seed email
         $stats = [];
         $results = $this->results ?? [];
-        
+
         foreach ($this->seed_emails ?? [] as $email) {
-            $domain = substr(strrchr($email, "@"), 1);
+            $atPos = strrpos($email, "@");
+            $domain = $atPos !== false ? substr($email, $atPos + 1) : 'invalid';
             $provider = match (true) {
                 str_contains($domain, 'gmail') => 'Gmail',
                 str_contains($domain, 'outlook') || str_contains($domain, 'hotmail') => 'Microsoft',

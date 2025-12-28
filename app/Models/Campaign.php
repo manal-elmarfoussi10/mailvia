@@ -36,15 +36,7 @@ class Campaign extends Model
         return $this->belongsTo(Template::class);
     }
 
-    public function provider(): BelongsTo
-    {
-        return $this->belongsTo(Provider::class);
-    }
 
-    public function sender(): BelongsTo
-    {
-        return $this->belongsTo(Sender::class);
-    }
 
     public function sends(): HasMany
     {

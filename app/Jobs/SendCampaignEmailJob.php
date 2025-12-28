@@ -44,8 +44,6 @@ class SendCampaignEmailJob implements ShouldQueue
 
         try {
             $template = $this->campaign->template;
-            $sender = $this->campaign->sender;
-            $provider = $this->campaign->provider;
             $subject = $this->campaign->subject;
 
             // A/B Testing Variation Selection
@@ -119,18 +117,23 @@ class SendCampaignEmailJob implements ShouldQueue
 
             // Send via Mail facade (configured via ENV-only logic)
             // No provider dynamic config. Uses .env default.
-            
-            Mail::send([], [], function ($message) use ($sender, $html, $text, $subject) {
-                // Use correct sender fields with fallback to global config
-                $fromEmail = $sender->email ?? config('mail.from.address');
-                $fromName = $sender->name ?? config('mail.from.name');
+
+            Mail::send([], [], function ($message) use ($html, $text, $subject) {
+                // Use campaign sender fields with fallback to global config
+                $fromEmail = $this->campaign->from_email ?? config('mail.from.address');
+                $fromName = $this->campaign->from_name ?? config('mail.from.name');
 
                 $message->to($this->contact->email)
                     ->from($fromEmail, $fromName)
                     ->subject($subject)
                     ->html($html)
                     ->plain($text);
-                
+
+                // Add reply-to if specified
+                if ($this->campaign->reply_to) {
+                    $message->replyTo($this->campaign->reply_to);
+                }
+
                 // Custom headers
                 $message->getHeaders()->addTextHeader('X-Campaign-Id', $this->campaign->id);
                 $message->getHeaders()->addTextHeader('X-Contact-Id', $this->contact->id);

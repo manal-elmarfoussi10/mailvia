@@ -20,16 +20,14 @@ class CampaignController extends Controller
     public function create()
     {
         $company = auth()->user()->companies()->first();
-        
+
         $templates = $company->templates;
-        $providers = $company->providers;
-        $senders = $company->senders;
         $lists = $company->lists;
         $segments = $company->segments;
-        
+
         $campaign = new \App\Models\Campaign();
-        
-        return view('campaigns.create', compact('templates', 'providers', 'senders', 'lists', 'segments', 'campaign'));
+
+        return view('campaigns.create', compact('templates', 'lists', 'segments', 'campaign'));
     }
 
     public function store(Request $request)
@@ -408,29 +406,35 @@ class CampaignController extends Controller
     {
         $this->authorize('update', $campaign);
 
-        $request->validate(['email' => 'required|email']);
-        $email = $request->email;
+        $request->validate([
+            'emails' => 'required|array|min:1|max:3',
+            'emails.*' => 'email'
+        ]);
 
-        // Use the campaign's sender fields
-        $fromName = $campaign->from_name ?? config('mail.from.name');
-        $fromEmail = $campaign->from_email ?? config('mail.from.address');
+        $emails = $request->emails;
 
         try {
             $template = $campaign->template;
             $content = $template ? ($template->content_html ?? $template->content_text) : 'No content';
-            
-            // Simple string replacement for basic personalization testing
-            $content = str_replace('{{email}}', $email, $content);
-            $content = str_replace('{{name}}', 'Test User', $content);
 
-            \Mail::send([], [], function ($message) use ($email, $fromEmail, $fromName, $campaign, $content) {
-                $message->to($email)
-                    ->from($fromEmail, $fromName)
-                    ->subject('[TEST] ' . $campaign->subject)
-                    ->html($content);
-            });
+            foreach ($emails as $email) {
+                // Simple string replacement for basic personalization testing
+                $personalizedContent = str_replace('{{email}}', $email, $content);
+                $personalizedContent = str_replace('{{name}}', 'Test User', $personalizedContent);
 
-            return response()->json(['message' => 'Test email sent to ' . $email]);
+                \Mail::mailer(config('mail.default'))->send([], [], function ($message) use ($email, $campaign, $personalizedContent) {
+                    $message->to($email)
+                        ->from($campaign->from_email, $campaign->from_name)
+                        ->subject('[TEST] ' . $campaign->subject)
+                        ->html($personalizedContent);
+
+                    if ($campaign->reply_to) {
+                        $message->replyTo($campaign->reply_to);
+                    }
+                });
+            }
+
+            return response()->json(['message' => 'Test emails sent to ' . implode(', ', $emails)]);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Failed to send test: ' . $e->getMessage()], 500);
         }

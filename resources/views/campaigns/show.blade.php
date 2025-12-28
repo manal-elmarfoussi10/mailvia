@@ -273,9 +273,9 @@
                     <!-- Infrastructure Insights -->
                     <x-card title="Infrastructure Insights">
                         <div class="p-4 bg-gray-50 rounded-xl mb-4">
-                            <span class="text-xs font-bold text-gray-400 uppercase block mb-1">Provider & Sender</span>
-                            <span class="text-sm font-semibold text-gray-900 block">{{ $campaign->provider->name ?? 'None' }}</span>
-                            <span class="text-xs text-gray-500">{{ $campaign->sender->name ?? 'None' }} ({{ $campaign->sender->email ?? 'None' }})</span>
+                            <span class="text-xs font-bold text-gray-400 uppercase block mb-1">Sender</span>
+                            <span class="text-sm font-semibold text-gray-900 block">SES SMTP</span>
+                            <span class="text-xs text-gray-500">{{ $campaign->from_name ?? 'None' }} ({{ $campaign->from_email ?? 'None' }})</span>
                         </div>
 
                         @if($failingDomains->isNotEmpty())

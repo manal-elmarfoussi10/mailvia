@@ -83,19 +83,19 @@
                                             <div>
                                                 <div class="flex justify-between text-[10px] mb-1">
                                                     <span class="font-bold text-emerald-600">INBOX</span>
-                                                    <span class="text-gray-500">{{ round(($pStats['inbox'] / $pStats['total']) * 100) }}%</span>
+                                                    <span class="text-gray-500">{{ $pStats['total'] > 0 ? round(($pStats['inbox'] / $pStats['total']) * 100) : 0 }}%</span>
                                                 </div>
                                                 <div class="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
-                                                    <div class="bg-emerald-500 h-1.5" style="width: {{ ($pStats['inbox'] / $pStats['total']) * 100 }}%"></div>
+                                                    <div class="bg-emerald-500 h-1.5" style="width: {{ $pStats['total'] > 0 ? ($pStats['inbox'] / $pStats['total']) * 100 : 0 }}%"></div>
                                                 </div>
                                             </div>
                                             <div>
                                                 <div class="flex justify-between text-[10px] mb-1">
                                                     <span class="font-bold text-rose-600">SPAM</span>
-                                                    <span class="text-gray-500">{{ round(($pStats['spam'] / $pStats['total']) * 100) }}%</span>
+                                                    <span class="text-gray-500">{{ $pStats['total'] > 0 ? round(($pStats['spam'] / $pStats['total']) * 100) : 0 }}%</span>
                                                 </div>
                                                 <div class="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
-                                                    <div class="bg-rose-500 h-1.5" style="width: {{ ($pStats['spam'] / $pStats['total']) * 100 }}%"></div>
+                                                    <div class="bg-rose-500 h-1.5" style="width: {{ $pStats['total'] > 0 ? ($pStats['spam'] / $pStats['total']) * 100 : 0 }}%"></div>
                                                 </div>
                                             </div>
                                         </div>
