@@ -1,17 +1,4 @@
-<x-app-layout>
-    @php
-        $results = $inboxTest->results ?? [];
-        $total = count($inboxTest->seed_emails);
-        $inboxCount = collect($results)->where('folder', 'inbox')->count();
-        $spamCount = collect($results)->where('folder', 'spam')->count();
-        $promoCount = collect($results)->where('folder', 'promotions')->count();
-        $missingCount = $total - count($results);
-        
-        $inboxPercent = $total > 0 ? round(($inboxCount / $total) * 100) : 0;
-        $spamPercent = $total > 0 ? round(($spamCount / $total) * 100) : 0;
-        $promoPercent = $total > 0 ? round(($promoCount / $total) * 100) : 0;
-        $missingPercent = $total > 0 ? round(($missingCount / $total) * 100) : 0;
-    @endphp
+
 
     <x-slot name="header">
         <div class="flex justify-between items-center">

@@ -142,19 +142,25 @@ class InboxTestController extends Controller
             return back()->with('error', 'Critical Error: ' . $e->getMessage());
         }
 
+        // Initialize results for all seed emails as 'missing' (pending check)
+        $initialResults = [];
+        foreach ($inboxTest->seed_emails as $email) {
+            $initialResults[$email] = 'missing'; 
+        }
+
         if ($failedCount === count($inboxTest->seed_emails)) {
-            $inboxTest->update(['status' => 'failed', 'sent_at' => now()]);
+            $inboxTest->update(['status' => 'failed', 'sent_at' => now(), 'results' => $initialResults]);
             return back()->with('error', 'All emails failed. First error: ' . $firstError);
         }
 
         $inboxTest->update([
             'status' => 'sent',
             'sent_at' => now(),
-            'results' => ['sent_count' => count($inboxTest->seed_emails) - $failedCount, 'failed_count' => $failedCount]
+            'results' => $initialResults // Store map of email => status
         ]);
 
         return redirect()->route('inbox-tests.show', $inboxTest)
-            ->with('success', 'Test emails sent via default pipeline! (Success: ' . (count($inboxTest->seed_emails) - $failedCount) . ', Failed: ' . $failedCount . ')');
+            ->with('success', 'Test emails sent! Please check your seed mailboxes and update statuses below.');
     }
 
     public function updateResults(Request $request, InboxTest $inboxTest)
@@ -165,11 +171,13 @@ class InboxTestController extends Controller
             'results' => 'required|array',
         ]);
 
+        // Merge existing results with new ones (or just overwrite)
+        // Ensure we strictly follow email => status format
         $inboxTest->update([
             'results' => $request->results,
             'status' => 'completed',
         ]);
 
-        return back()->with('success', 'Results updated.');
+        return back()->with('success', 'Results updated successfully.');
     }
 }
