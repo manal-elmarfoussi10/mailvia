@@ -24,7 +24,7 @@ class CampaignController extends Controller
         $templates = $company->templates;
         $providers = $company->providers;
         $senders = $company->senders;
-        $lists = $company->contactLists;
+        $lists = $company->lists;
         $segments = $company->segments;
         
         return view('campaigns.create', compact('templates', 'providers', 'senders', 'lists', 'segments'));
@@ -38,9 +38,9 @@ class CampaignController extends Controller
             'name' => 'required|string|max:255',
             'subject' => 'nullable|string|max:255',
             'preheader' => 'nullable|string|max:255',
+            'from_name' => 'nullable|string|max:255',
+            'from_email' => 'nullable|email|max:255',
             'template_id' => 'nullable|exists:templates,id',
-            'provider_id' => 'nullable|exists:providers,id',
-            'sender_id' => 'nullable|exists:senders,id',
             'audience' => 'required|array',
             'audience.type' => 'required|in:all,lists,segments',
             'audience.ids' => 'nullable|array',
@@ -170,9 +170,9 @@ class CampaignController extends Controller
             'name' => 'required|string|max:255',
             'subject' => 'nullable|string|max:255',
             'preheader' => 'nullable|string|max:255',
+            'from_name' => 'nullable|string|max:255',
+            'from_email' => 'nullable|email|max:255',
             'template_id' => 'nullable|exists:templates,id',
-            'provider_id' => 'nullable|exists:providers,id',
-            'sender_id' => 'nullable|exists:senders,id',
             'audience' => 'required|array',
             'throttle_rate' => 'nullable|integer|min:1|max:100',
             'throttle_concurrency' => 'nullable|integer|min:1|max:10',
@@ -339,6 +339,99 @@ class CampaignController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    public function progress(Campaign $campaign)
+    {
+        $this->authorize('view', $campaign);
+
+        // Calculate rates
+        $delivered = $campaign->delivered_count ?: 1;
+        $attempted = $campaign->sent_count ?: 1;
+        
+        $rates = [
+            'open_rate' => round(($campaign->open_count / $delivered) * 100, 1),
+            'click_rate' => round(($campaign->click_count / $delivered) * 100, 1),
+            'bounce_rate' => round(($campaign->bounced_count / $attempted) * 100, 1),
+            'complaint_rate' => round(($campaign->complaint_count / $delivered) * 100, 2),
+        ];
+
+        // Timeline Data (last 24h)
+        $timelineData = $campaign->events()
+            ->whereIn('type', ['opened', 'clicked'])
+            ->selectRaw('type, DATE_FORMAT(created_at, "%Y-%m-%d %H:00:00") as hour, count(*) as count')
+            ->groupBy('type', 'hour')
+            ->orderBy('hour')
+            ->get()
+            ->groupBy('type');
+
+        $timeline = [
+            'hours' => $timelineData->first()?->pluck('hour') ?? [],
+            'opens' => $timelineData->get('opened')?->pluck('count') ?? [],
+            'clicks' => $timelineData->get('clicked')?->pluck('count') ?? []
+        ];
+
+        // Recent Events
+        $recentEvents = $campaign->events()
+            ->with('contact')
+            ->latest()
+            ->limit(5)
+            ->get()
+            ->map(function($e) {
+                return [
+                    'email' => $e->contact->email,
+                    'type' => $e->type, // delivered, opened, clicked, etc.
+                    'created_at' => $e->created_at->diffForHumans(null, true)
+                ];
+            });
+
+        return response()->json([
+            'status' => $campaign->status,
+            'progress_percentage' => $campaign->getProgressPercentage(),
+            'metrics' => [
+                'total_recipients' => $campaign->total_recipients,
+                'sent_count' => $campaign->sent_count,
+                'delivered_count' => $campaign->delivered_count,
+                'bounced_count' => $campaign->bounced_count,
+                'open_count' => $campaign->open_count,
+                'click_count' => $campaign->click_count,
+            ],
+            'rates' => $rates,
+            'timeline' => $timeline,
+            'recent_events' => $recentEvents
+        ]);
+    }
+
+    public function sendTest(Request $request, Campaign $campaign)
+    {
+        $this->authorize('update', $campaign);
+
+        $request->validate(['email' => 'required|email']);
+        $email = $request->email;
+
+        // Use the campaign's sender fields
+        $fromName = $campaign->from_name ?? config('mail.from.name');
+        $fromEmail = $campaign->from_email ?? config('mail.from.address');
+
+        try {
+            $template = $campaign->template;
+            $content = $template ? ($template->content_html ?? $template->content_text) : 'No content';
+            
+            // Simple string replacement for basic personalization testing
+            $content = str_replace('{{email}}', $email, $content);
+            $content = str_replace('{{name}}', 'Test User', $content);
+
+            \Mail::send([], [], function ($message) use ($email, $fromEmail, $fromName, $campaign, $content) {
+                $message->to($email)
+                    ->from($fromEmail, $fromName)
+                    ->subject('[TEST] ' . $campaign->subject)
+                    ->html($content);
+            });
+
+            return response()->json(['message' => 'Test email sent to ' . $email]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to send test: ' . $e->getMessage()], 500);
+        }
     }
 
     public function destroy(Campaign $campaign)

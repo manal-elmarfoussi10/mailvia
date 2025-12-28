@@ -6,8 +6,9 @@
         subject: '{{ old('subject', $campaign->subject ?? '') }}',
         preheader: '{{ old('preheader', $campaign->preheader ?? '') }}',
         template_id: '{{ old('template_id', $campaign->template_id ?? '') }}',
-        provider_id: '{{ old('provider_id', $campaign->provider_id ?? '') }}',
-        sender_id: '{{ old('sender_id', $campaign->sender_id ?? '') }}',
+        template_id: '{{ old('template_id', $campaign->template_id ?? '') }}',
+        from_name: '{{ old('from_name', $campaign->from_name ?? config('mail.from.name')) }}',
+        from_email: '{{ old('from_email', $campaign->from_email ?? config('mail.from.address')) }}',
         audience_type: '{{ old('audience.type', $campaign->audience['type'] ?? 'all') }}',
         audience_ids: @json(old('audience.ids', $campaign->audience['ids'] ?? [])),
         exclude_suppressed: {{ old('audience.exclude_suppressed', $campaign->audience['exclude_suppressed'] ?? 1) ? 'true' : 'false' }},
@@ -218,29 +219,23 @@
             </div>
         </div>
 
-        <!-- Step 3: Provider & Sender -->
+        <!-- Step 3: From Settings -->
         <div x-show="step == 3">
-            <h3 class="text-xl font-bold text-gray-900 mb-6">Delivery Settings</h3>
+            <h3 class="text-xl font-bold text-gray-900 mb-6">Sender Identity</h3>
             
             <div class="space-y-6">
-                <div>
-                    <x-input-label value="Delivery Provider" />
-                    <select name="provider_id" x-model="formData.provider_id" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-violet-600 focus:ring-violet-600">
-                        <option value="">Select a provider</option>
-                        @foreach($providers as $provider)
-                            <option value="{{ $provider->id }}">{{ $provider->name }} ({{ $provider->type }})</option>
-                        @endforeach
-                    </select>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <x-input-label value="From Name" />
+                        <x-text-input name="from_name" x-model="formData.from_name" class="mt-1 block w-full" placeholder="E.g. Support Team" />
+                    </div>
+                    <div>
+                        <x-input-label value="From Email" />
+                         <x-text-input name="from_email" x-model="formData.from_email" class="mt-1 block w-full" placeholder="E.g. hello@yourdomain.com" />
+                    </div>
                 </div>
-
-                <div>
-                    <x-input-label value="Sender Identity" />
-                    <select name="sender_id" x-model="formData.sender_id" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-violet-600 focus:ring-violet-600">
-                        <option value="">Select a sender</option>
-                        @foreach($senders as $sender)
-                            <option value="{{ $sender->id }}">{{ $sender->from_name }} ({{ $sender->from_email }})</option>
-                        @endforeach
-                    </select>
+                <div class="p-4 bg-blue-50 text-blue-800 rounded-xl border border-blue-200 text-sm">
+                    <strong>Note:</strong> Emails will be sent using the global verified SES configuration. Ensure this "From Email" is authorized or aligns with your domain settings.
                 </div>
             </div>
         </div>

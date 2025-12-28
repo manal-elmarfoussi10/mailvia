@@ -50,6 +50,62 @@
                         </x-button-secondary>
                     </form>
                 @endif
+
+                <!-- Pause/Resume/Stop Controls -->
+                @if($campaign->status === 'sending')
+                    <form action="{{ route('campaigns.pause', $campaign) }}" method="POST">
+                        @csrf
+                        <x-button-secondary type="submit" class="text-amber-600 bg-amber-50 hover:bg-amber-100 border-amber-200">
+                            Pause Sending
+                        </x-button-secondary>
+                    </form>
+                    <form action="{{ route('campaigns.stop', $campaign) }}" method="POST" onsubmit="return confirm('Are you sure? This cannot be undone.');">
+                        @csrf
+                        <x-button-secondary type="submit" class="text-rose-600 bg-rose-50 hover:bg-rose-100 border-rose-200">
+                            Stop Permanently
+                        </x-button-secondary>
+                    </form>
+                @endif
+
+                @if($campaign->status === 'paused')
+                    <form action="{{ route('campaigns.resume', $campaign) }}" method="POST">
+                        @csrf
+                        <x-button-primary type="submit">
+                            Resume Sending
+                        </x-button-primary>
+                    </form>
+                @endif
+                
+                <!-- Test Send Button -->
+                <div x-data="{ open: false }">
+                    <button @click="open = true" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        Test Send
+                    </button>
+                    
+                    <!-- Modal -->
+                    <div x-show="open" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+                        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                            <div x-show="open" @click="open = false" class="fixed inset-0 transition-opacity" aria-hidden="true">
+                                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                            </div>
+                            <div x-show="open" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                                <form action="{{ route('campaigns.test_send', $campaign) }}" method="POST" class="p-6">
+                                    @csrf
+                                    <h3 class="text-lg font-medium text-gray-900 mb-4">Send Test Email</h3>
+                                    <div class="mb-4">
+                                        <x-input-label for="test_email" value="Recipient Email" />
+                                        <x-text-input id="test_email" name="email" type="email" class="block w-full mt-1" :value="auth()->user()->email" required />
+                                    </div>
+                                    <div class="flex justify-end gap-3">
+                                        <button type="button" @click="open = false" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50">Cancel</button>
+                                        <x-button-primary>Send Test</x-button-primary>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </x-slot>

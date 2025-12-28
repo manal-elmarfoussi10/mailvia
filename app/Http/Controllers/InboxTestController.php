@@ -86,10 +86,7 @@ class InboxTestController extends Controller
         $stats = $inboxTest->getPlacementStats();
         $providerStats = $inboxTest->getProviderStats();
         
-        $sender = $inboxTest->sender ?? $inboxTest->company->senders()->first();
-        $authCheck = $sender ? $sender->checkAuth() : ['spf' => false, 'dkim' => false, 'dmarc' => false, 'ssl' => true];
-
-        return view('inbox-tests.show', compact('inboxTest', 'stats', 'providerStats', 'authCheck'));
+        return view('inbox-tests.show', compact('inboxTest', 'stats', 'providerStats'));
     }
 
     public function send(InboxTest $inboxTest)

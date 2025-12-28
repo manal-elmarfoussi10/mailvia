@@ -55,7 +55,8 @@ Route::middleware('auth')->group(function () {
     Route::post('campaigns/{campaign}/stop', [\App\Http\Controllers\CampaignController::class, 'stop'])->name('campaigns.stop');
     Route::post('campaigns/{campaign}/duplicate', [\App\Http\Controllers\CampaignController::class, 'duplicate'])->name('campaigns.duplicate');
     Route::get('campaigns/{campaign}/export', [\App\Http\Controllers\CampaignController::class, 'export'])->name('campaigns.export');
-    Route::get('campaigns/{campaign}/progress', [\App\Http\Controllers\CampaignProgressController::class, 'show'])->name('campaigns.progress');
+    Route::get('campaigns/{campaign}/progress', [\App\Http\Controllers\CampaignController::class, 'progress'])->name('campaigns.progress');
+    Route::post('campaigns/{campaign}/test-send', [\App\Http\Controllers\CampaignController::class, 'sendTest'])->name('campaigns.test_send');
 
     Route::get('queue-monitor', [\App\Http\Controllers\QueueMonitorController::class, 'index'])->name('queue.monitor');
 

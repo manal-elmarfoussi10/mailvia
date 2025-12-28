@@ -154,101 +154,12 @@
                             </div>
                         </x-card>
 
-                        <x-card title="Content Analysis (AI Insights)">
-                             <div class="p-6">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div class="space-y-4">
-                                        <h4 class="text-sm font-bold text-gray-900 mb-2">Spam Trigger Risk</h4>
-                                        <div class="space-y-3">
-                                            <div class="flex items-center justify-between text-xs">
-                                                <span class="text-gray-600 font-medium">Trigger Words Found</span>
-                                                <span class="font-bold text-amber-600">3 detected</span>
-                                            </div>
-                                            <div class="p-2 bg-amber-50 rounded border border-amber-100 text-[10px] text-amber-800 italic">
-                                                "Winner", "Guarantee", "Limited Time"
-                                            </div>
-                                            <div class="flex items-center justify-between text-xs">
-                                                <span class="text-gray-600 font-medium">Subject Length</span>
-                                                <span class="font-bold text-emerald-600">Optimal (42 chars)</span>
-                                            </div>
-                                            <div class="flex items-center justify-between text-xs">
-                                                <span class="text-gray-600 font-medium">Image-to-Text Ratio</span>
-                                                <span class="font-bold text-emerald-600">Good (15/85)</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="space-y-4">
-                                        <h4 class="text-sm font-bold text-gray-900 mb-2">Deliverability Score</h4>
-                                        <div class="flex items-center gap-4">
-                                            <div class="relative w-20 h-20">
-                                                <svg class="w-20 h-20" viewBox="0 0 36 36">
-                                                    <path class="text-gray-100" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                                    <path class="text-emerald-500" stroke-width="3" stroke-dasharray="85, 100" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                                </svg>
-                                                <div class="absolute inset-0 flex items-center justify-center font-black text-xs">85%</div>
-                                            </div>
-                                            <div class="text-[10px] text-gray-500 italic leading-relaxed">
-                                                Your content has a high probability of reaching the inbox. Minor improvements in subject line urgency could boost results.
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                             </div>
-                        </x-card>
+
                     </div>
 
                     <!-- Right: Technical Health -->
                     <div class="space-y-8">
-                        <x-card title="Technical Authentication">
-                            <div class="p-6 space-y-4">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center">
-                                        <div class="w-2 h-2 rounded-full {{ $authCheck['spf'] ? 'bg-emerald-500' : 'bg-rose-500' }} mr-2"></div>
-                                        <span class="text-xs font-medium text-gray-700">SPF Record</span>
-                                    </div>
-                                    <x-badge :type="$authCheck['spf'] ? 'success' : 'error'">
-                                        {{ $authCheck['spf'] ? 'PASS' : 'FAIL' }}
-                                    </x-badge>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center">
-                                        <div class="w-2 h-2 rounded-full {{ $authCheck['dkim'] === true ? 'bg-emerald-500' : ($authCheck['dkim'] === false ? 'bg-rose-500' : 'bg-gray-300') }} mr-2"></div>
-                                        <span class="text-xs font-medium text-gray-700">DKIM Record</span>
-                                    </div>
-                                    @if($authCheck['dkim'] === null)
-                                        <x-badge type="neutral">UNKNOWN</x-badge>
-                                    @else
-                                        <x-badge :type="$authCheck['dkim'] ? 'success' : 'error'">
-                                            {{ $authCheck['dkim'] ? 'PASS' : 'FAIL' }}
-                                        </x-badge>
-                                    @endif
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center">
-                                        <div class="w-2 h-2 rounded-full {{ $authCheck['dmarc'] ? 'bg-emerald-500' : 'bg-rose-500' }} mr-2"></div>
-                                        <span class="text-xs font-medium text-gray-700">DMARC Record</span>
-                                    </div>
-                                    <x-badge :type="$authCheck['dmarc'] ? 'success' : 'error'">
-                                        {{ $authCheck['dmarc'] ? 'PASS' : 'FAIL' }}
-                                    </x-badge>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center">
-                                        <div class="w-2 h-2 rounded-full {{ $authCheck['ssl'] ? 'bg-emerald-500' : 'bg-rose-500' }} mr-2"></div>
-                                        <span class="text-xs font-medium text-gray-700">SSL/TLS</span>
-                                    </div>
-                                    <x-badge :type="$authCheck['ssl'] ? 'success' : 'error'">
-                                        {{ $authCheck['ssl'] ? 'SECURE' : 'INSECURE' }}
-                                    </x-badge>
-                                </div>
-                                <div class="mt-4 pt-4 border-t border-gray-100">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs font-bold text-gray-400 uppercase">Sender IP Reputation</span>
-                                        <span class="text-xs font-bold text-emerald-600 uppercase">Excellent</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </x-card>
+
 
                         <x-card title="Test Settings">
                             <div class="p-6 space-y-4">
