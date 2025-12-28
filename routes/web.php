@@ -2,6 +2,18 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Mail;
+
+
+Route::get('/test-ses', function () {
+    Mail::raw('SES SMTP test from Mailvia', function ($message) {
+        $message->to('manalelmarfoussi@gmail.com')
+            ->from('info@florigenearome.com', 'Mailvia SES')
+            ->subject('SES SMTP Test');
+    });
+
+    return 'SES test sent';
+});
 
 Route::get('/', function () {
     return redirect()->route('login');
