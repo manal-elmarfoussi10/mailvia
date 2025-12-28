@@ -28,20 +28,15 @@
                             </p>
                         </div>
 
-                        <div>
-                             <x-input-label value="Select Sender" />
-                             <select name="sender_id" class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-violet-600 focus:ring-violet-600" required>
-                                 <option value="" disabled selected>-- Choose a Sender --</option>
-                                 @foreach($senders as $sender)
-                                     <option value="{{ $sender->id }}" {{ old('sender_id') == $sender->id ? 'selected' : '' }}>
-                                         {{ $sender->name }} &lt;{{ $sender->email }}&gt; (via {{ $sender->provider->name ?? 'System Default' }})
-                                     </option>
-                                 @endforeach
-                             </select>
-                             <x-input-error :messages="$errors->get('sender_id')" class="mt-2" />
-                             @if($senders->isEmpty())
-                                <p class="text-sm text-red-500 mt-1">You need a verified sender to create a test.</p>
-                             @endif
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <x-input-label for="from_name" value="From Name" />
+                                <x-text-input id="from_name" name="from_name" class="block mt-1 w-full" type="text" placeholder="E.g. Support Team" value="{{ old('from_name', config('mail.from.name')) }}" required />
+                            </div>
+                            <div>
+                                <x-input-label for="from_email" value="From Email" />
+                                <x-text-input id="from_email" name="from_email" class="block mt-1 w-full" type="email" placeholder="E.g. info@yourdomain.com" value="{{ old('from_email', config('mail.from.address')) }}" required />
+                            </div>
                         </div>
 
                         <div>

@@ -30,25 +30,19 @@ class InboxTestController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        // Validate custom sender fields
+        $data = $request->validate([
             'name' => 'required|string|max:255',
             'seed_list_id' => 'required|exists:seed_lists,id',
-            'sender_id' => 'required|exists:senders,id',
             'template_id' => 'nullable|exists:templates,id',
             'subject' => 'required|string|max:255',
+            'from_name' => 'required|string|max:255',
+            'from_email' => 'required|email|max:255',
         ]);
 
         $company = auth()->user()->companies()->first();
-        $seedList = SeedList::findOrFail($request->seed_list_id);
         
-        // Populate seed_emails from the selected list
-        $seedEmails = $seedList->emails->pluck('email')->toArray();
-
         $test = $company->inboxTests()->create([
-            'name' => $request->name,
-            'seed_emails' => $seedEmails,
-            'sender_id' => $request->sender_id,
-            'template_id' => $request->template_id,
             'subject' => $request->subject,
             'status' => 'draft',
         ]);
@@ -79,7 +73,7 @@ class InboxTestController extends Controller
         }
 
         $template = $inboxTest->template;
-        $sender = $inboxTest->sender ?? $inboxTest->company->senders()->first();
+        $template = $inboxTest->template;
 
         // Warning: using strict ENV mailer
         
@@ -98,11 +92,11 @@ class InboxTestController extends Controller
             foreach ($inboxTest->seed_emails as $email) {
                 try {
                     // Use global Mail::send() which uses default mailer from .env
-                    Mail::send([], [], function ($message) use ($email, $inboxTest, $template, $sender) {
+                    Mail::send([], [], function ($message) use ($email, $inboxTest, $template) {
                         $message->to($email)
                             ->from(
-                                $sender->email ?? config('mail.from.address'),
-                                $sender->name ?? config('mail.from.name')
+                                $inboxTest->from_email ?? config('mail.from.address'),
+                                $inboxTest->from_name ?? config('mail.from.name')
                             )
                             ->subject($inboxTest->subject)
                             ->html($template?->content_html ?? $template?->content_text ?? '<p>Test Email</p>');
