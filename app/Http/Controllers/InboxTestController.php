@@ -42,9 +42,19 @@ class InboxTestController extends Controller
 
         $company = auth()->user()->companies()->first();
         
+        // Fetch seed emails
+        $seedList = SeedList::with('emails')->findOrFail($data['seed_list_id']);
+        $seedEmails = $seedList->emails->pluck('email')->toArray();
+
         $test = $company->inboxTests()->create([
-            'subject' => $request->subject,
+            'name' => $data['name'],
+            'seed_list_id' => $data['seed_list_id'],
+            'template_id' => $data['template_id'],
+            'subject' => $data['subject'],
+            'from_name' => $data['from_name'],
+            'from_email' => $data['from_email'],
             'status' => 'draft',
+            'seed_emails' => $seedEmails,
         ]);
 
         return redirect()->route('inbox-tests.show', $test)->with('success', 'Inbox test created.');
