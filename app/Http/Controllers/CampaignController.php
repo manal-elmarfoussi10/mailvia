@@ -26,6 +26,7 @@ class CampaignController extends Controller
         $segments = $company->segments;
 
         $campaign = new \App\Models\Campaign();
+        $campaign->audience = ['type' => 'lists', 'ids' => []];
 
         return view('campaigns.create', compact('templates', 'lists', 'segments', 'campaign'));
     }

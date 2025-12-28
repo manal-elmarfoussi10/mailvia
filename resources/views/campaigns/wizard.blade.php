@@ -6,8 +6,8 @@
         description: '{{ old('description', $campaign->description ?? '') }}',
         audience_type: '{{ old('audience.type', $campaign->audience['type'] ?? 'lists') }}',
         audience_ids: @json(old('audience.ids', $campaign->audience['ids'] ?? [])),
-        from_name: '{{ old('from_name', $campaign->from_name ?? '') }}',
-        from_email: '{{ old('from_email', $campaign->from_email ?? '') }}',
+        from_name: '{{ old('from_name', $campaign->from_name ?? config('mail.from.name')) }}',
+        from_email: '{{ old('from_email', $campaign->from_email ?? config('mail.from.address')) }}',
         reply_to: '{{ old('reply_to', $campaign->reply_to ?? '') }}',
         template_id: '{{ old('template_id', $campaign->template_id ?? '') }}',
         subject: '{{ old('subject', $campaign->subject ?? '') }}',
@@ -187,8 +187,8 @@
                 <div>
                     <x-input-label value="Sending Rate (Emails per second)" />
                     <div class="flex items-center gap-4 mt-1">
-                        <input type="range" min="1" max="100" step="1" x-model="formData.throttle_rate" name="throttle_rate" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-violet-600">
-                        <span class="w-16 text-center font-bold text-violet-600 px-2 py-1 bg-violet-50 rounded" x-text="formData.throttle_rate"></span>
+                        <input type="range" min="1" max="100" step="1" x-model="formData.eps" name="eps" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-violet-600">
+                        <span class="w-16 text-center font-bold text-violet-600 px-2 py-1 bg-violet-50 rounded" x-text="formData.eps"></span>
                     </div>
                     <p class="text-xs text-gray-500 mt-2">Recommended: 10-20/sec for most shared providers. Lower if you have a new domain.</p>
                 </div>
