@@ -27,7 +27,9 @@ class CampaignController extends Controller
         $lists = $company->lists;
         $segments = $company->segments;
         
-        return view('campaigns.create', compact('templates', 'providers', 'senders', 'lists', 'segments'));
+        $campaign = new \App\Models\Campaign();
+        
+        return view('campaigns.create', compact('templates', 'providers', 'senders', 'lists', 'segments', 'campaign'));
     }
 
     public function store(Request $request)
