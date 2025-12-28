@@ -11,46 +11,45 @@ class AdminMailTestController extends Controller
 {
     public function index()
     {
-        // Simple UI to test email
-        return "<form method='POST' action='".route('admin.mail.test.send')."'>
+        // Simple UI to test email via ENV pipeline
+        return "<div style='font-family:sans-serif; padding:20px;'>
+        <h2>Admin Mail Test (ENV Pipeline)</h2>
+        <form method='POST' action='".route('admin.mail.test.send')."'>
             ".csrf_field()."
-            <label>To Email: <input type='email' name='to' required></label><br>
-            <label>Provider ID (Optional): <input type='number' name='provider_id'></label><br>
-            <button type='submit'>Send Test</button>
-        </form>";
+            <label>To Email: <input type='email' name='to' required placeholder='name@example.com' style='padding:5px; width:300px;'></label>
+            <br><br>
+            <button type='submit' style='padding:10px 20px; cursor:pointer;'>Send Test Email</button>
+        </form>
+        </div>";
     }
 
     public function send(Request $request)
     {
         $request->validate([
             'to' => 'required|email',
-            'provider_id' => 'nullable|exists:providers,id',
         ]);
 
         try {
-            $mailerName = null;
-            if ($request->provider_id) {
-                $provider = Provider::findOrFail($request->provider_id);
-                $mailerName = MailService::configureMailer($provider);
-            }
+            // ENV-ONLY Mode: Use the default mailer configured in .env
+            // Logging details
+            $config = config('mail.mailers.smtp');
+            \Log::info("AdminTest: Attempting send to {$request->to}", [
+                'host' => $config['host'] ?? 'N/A',
+                'user' => $config['username'] ?? 'N/A'
+            ]);
 
-            $mail = $mailerName ? Mail::mailer($mailerName) : Mail::to($request->to); 
-            
-            // If we used a specific mailer, we still need to set the recipient
-            if ($mailerName) {
-                $mail = $mail->to($request->to);
-            }
-
-            $mail->send([], [], function ($message) use ($request) {
+            Mail::send([], [], function ($message) use ($request) {
                 $message->to($request->to)
-                    ->subject('Admin Mail Test ' . now())
-                    ->html('This is a test email from the admin panel.');
+                    ->from(config('mail.from.address'), config('mail.from.name') . ' (Admin Test)')
+                    ->subject('Admin Mail Test: ' . now())
+                    ->html('<h3>This is a test email from the admin panel.</h3><p>If you see this, the ENV pipeline is working.</p>');
             });
 
-            return "Email sent successfully using driver: " . ($mailerName ?? config('mail.default'));
+            return back()->with('success', "Email sent successfully to {$request->to} using default mailer.");
 
         } catch (\Exception $e) {
-            return "Failed: " . $e->getMessage() . "<br><pre>" . $e->getTraceAsString() . "</pre>";
+            \Log::error("AdminTest: Failed to {$request->to}: " . $e->getMessage());
+            return "<h3>Failed</h3><p>" . $e->getMessage() . "</p><pre>" . $e->getTraceAsString() . "</pre>";
         }
     }
 }

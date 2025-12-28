@@ -81,28 +81,24 @@ class InboxTestController extends Controller
         $template = $inboxTest->template;
         $sender = $inboxTest->sender ?? $inboxTest->company->senders()->first();
 
-        // Warning: We are using ENV-only mailer, ignoring $sender->provider dynamic config
-        // But we still use Sender for From Name/Email
+        // Warning: using strict ENV mailer
         
         $failedCount = 0;
         $firstError = null;
 
         try {
-            // ENV-ONLY Mode: Use the default mailer configured in .env
-            $mailer = Mail::mailer(config('mail.default'));
-            
-            // Log configuration for debugging (masking password)
-            $config = config('mail.mailers.smtp');
-            \Log::info("InboxTest: Pre-flight check", [
-                'host' => $config['host'] ?? 'N/A',
-                'port' => $config['port'] ?? 'N/A',
-                'encryption' => $config['encryption'] ?? 'N/A',
-                'username' => $config['username'] ?? 'N/A'
+            // Log config for debug
+            $conf = config('mail.mailers.smtp');
+            \Log::info("InboxTest: Pre-flight via ENV", [
+                'host' => $conf['host'] ?? 'N/A',
+                'port' => $conf['port'] ?? 'N/A', 
+                'user' => $conf['username'] ?? 'N/A'
             ]);
 
             foreach ($inboxTest->seed_emails as $email) {
                 try {
-                    $mailer->send([], [], function ($message) use ($email, $inboxTest, $template, $sender) {
+                    // Use global Mail::send() which uses default mailer from .env
+                    Mail::send([], [], function ($message) use ($email, $inboxTest, $template, $sender) {
                         $message->to($email)
                             ->from(
                                 $sender->email ?? config('mail.from.address'),
@@ -112,21 +108,21 @@ class InboxTestController extends Controller
                             ->html($template?->content_html ?? $template?->content_text ?? '<p>Test Email</p>');
                     });
 
-                    \Log::info("InboxTest: Sent successfully to $email");
+                    \Log::info("InboxTest: Sent to $email");
                 } catch (\Exception $e) {
                     $failedCount++;
                     if (!$firstError) $firstError = $e->getMessage();
-                    \Log::error("InboxTest: Failed sending to $email. Error: " . $e->getMessage());
+                    \Log::error("InboxTest: Failed to $email: " . $e->getMessage());
                 }
             }
         } catch (\Throwable $e) {
-            \Log::error("InboxTest: Critical Loop Error: " . $e->getMessage());
+            \Log::error("InboxTest: Critical Error: " . $e->getMessage());
             return back()->with('error', 'Critical Error: ' . $e->getMessage());
         }
 
         if ($failedCount === count($inboxTest->seed_emails)) {
             $inboxTest->update(['status' => 'failed', 'sent_at' => now()]);
-            return back()->with('error', 'All emails failed to send. First error: ' . $firstError);
+            return back()->with('error', 'All emails failed. First error: ' . $firstError);
         }
 
         $inboxTest->update([
@@ -136,7 +132,7 @@ class InboxTestController extends Controller
         ]);
 
         return redirect()->route('inbox-tests.show', $inboxTest)
-            ->with('success', 'Test emails sent! (Success: ' . (count($inboxTest->seed_emails) - $failedCount) . ', Failed: ' . $failedCount . ')');
+            ->with('success', 'Test emails sent via default pipeline! (Success: ' . (count($inboxTest->seed_emails) - $failedCount) . ', Failed: ' . $failedCount . ')');
     }
 
     public function updateResults(Request $request, InboxTest $inboxTest)

@@ -96,8 +96,11 @@ class SendCampaignEmailJob implements ShouldQueue
             }
 
             // Prepare content (variables replacement)
-            $html = $this->replaceVariables($template->content_html);
-            $text = $this->replaceVariables($template->content_text);
+            $contentHtml = $template->content_html ?? $template->content_text ?? '';
+            $contentText = $template->content_text ?? strip_tags($contentHtml);
+            
+            $html = $this->replaceVariables($contentHtml);
+            $text = $this->replaceVariables($contentText);
 
             // Inject Tracking Pixel
             if ($this->campaign->track_opens) {
@@ -115,19 +118,25 @@ class SendCampaignEmailJob implements ShouldQueue
             }
 
             // Send via Mail facade (configured via ENV-only logic)
-            // Warning: Ignoring $provider and relying on .env config
+            // No provider dynamic config. Uses .env default.
             
-            Mail::mailer(config('mail.default'))->send([], [], function ($message) use ($sender, $html, $text, $subject) {
+            Mail::send([], [], function ($message) use ($sender, $html, $text, $subject) {
+                // Use correct sender fields with fallback to global config
+                $fromEmail = $sender->email ?? config('mail.from.address');
+                $fromName = $sender->name ?? config('mail.from.name');
+
                 $message->to($this->contact->email)
-                    ->from($sender->from_email, $sender->from_name)
+                    ->from($fromEmail, $fromName)
                     ->subject($subject)
                     ->html($html)
                     ->plain($text);
                 
-                // Custom headers for SES (will be returned in webhooks)
+                // Custom headers
                 $message->getHeaders()->addTextHeader('X-Campaign-Id', $this->campaign->id);
                 $message->getHeaders()->addTextHeader('X-Contact-Id', $this->contact->id);
             });
+            
+            Log::info("Campaign Sent [ID:{$this->campaign->id}] to {$this->contact->email} via Default Mailer");
 
             $this->send->markAsSent();
             $this->campaign->increment('sent_count');

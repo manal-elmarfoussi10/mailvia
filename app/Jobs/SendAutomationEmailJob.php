@@ -34,14 +34,21 @@ class SendAutomationEmailJob implements ShouldQueue
             $template = $this->automation->template;
             $sender = $this->automation->sender;
 
-            $html = $this->replaceVariables($template->content_html);
-            $text = $this->replaceVariables($template->content_text);
+            $contentHtml = $template->content_html ?? $template->content_text ?? '';
+            $contentText = $template->content_text ?? strip_tags($contentHtml);
+            
+            $html = $this->replaceVariables($contentHtml);
+            $text = $this->replaceVariables($contentText);
 
-            // Send via Mail facade
+            // Send via Mail facade (configured via ENV-only logic)
             Mail::send([], [], function ($message) use ($sender, $html, $text) {
+                 // Use correct sender fields
+                $fromEmail = $sender->email ?? config('mail.from.address');
+                $fromName = $sender->name ?? config('mail.from.name');
+
                 $message->to($this->contact->email)
-                    ->from($sender->from_email, $sender->from_name)
-                    ->subject($this->automation->name) // Or a specific subject from settings
+                    ->from($fromEmail, $fromName)
+                    ->subject($this->automation->name) 
                     ->html($html)
                     ->plain($text);
                 
