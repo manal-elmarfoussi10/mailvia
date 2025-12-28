@@ -129,7 +129,6 @@ class SendCampaignEmailJob implements ShouldQueue
                     ->html($html)
                     ->plain($text);
 
-                // Add reply-to if specified
                 if ($this->campaign->reply_to) {
                     $message->replyTo($this->campaign->reply_to);
                 }

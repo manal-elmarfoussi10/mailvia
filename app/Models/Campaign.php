@@ -24,6 +24,9 @@ class Campaign extends Model
         'is_ab_test' => 'boolean',
         'ab_variations' => 'array',
         'ab_test_sample_size' => 'float',
+        'warmup' => 'boolean',
+        'eps' => 'integer',
+        'batch_size' => 'integer',
     ];
 
     public function company(): BelongsTo

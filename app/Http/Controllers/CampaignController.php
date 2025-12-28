@@ -46,6 +46,11 @@ class CampaignController extends Controller
             'audience.ids' => 'nullable|array',
             'audience.exclude_suppressed' => 'nullable|boolean',
             'throttle_rate' => 'nullable|integer|min:1|max:100',
+            'description' => 'nullable|string',
+            'eps' => 'nullable|integer|min:1|max:1000',
+            'reply_to' => 'nullable|string|max:255',
+            'warmup' => 'nullable|boolean',
+            'batch_size' => 'nullable|integer|min:1',
             'throttle_concurrency' => 'nullable|integer|min:1|max:10',
             'scheduled_at' => 'nullable|date|after:now',
             'track_opens' => 'nullable|boolean',
@@ -59,6 +64,9 @@ class CampaignController extends Controller
 
         $data['track_opens'] = $request->boolean('track_opens', true);
         $data['track_clicks'] = $request->boolean('track_clicks', true);
+        $data['warmup'] = $request->boolean('warmup', false);
+        $data['eps'] = $data['eps'] ?? 10;
+        $data['batch_size'] = $data['batch_size'] ?? 100;
 
         $data['status'] = Campaign::STATUS_DRAFT;
         $campaign = $company->campaigns()->create($data);
@@ -174,7 +182,11 @@ class CampaignController extends Controller
             'from_email' => 'nullable|email|max:255',
             'template_id' => 'nullable|exists:templates,id',
             'audience' => 'required|array',
-            'throttle_rate' => 'nullable|integer|min:1|max:100',
+            'description' => 'nullable|string',
+            'eps' => 'nullable|integer|min:1|max:1000',
+            'reply_to' => 'nullable|string|max:255',
+            'warmup' => 'nullable|boolean',
+            'batch_size' => 'nullable|integer|min:1',
             'throttle_concurrency' => 'nullable|integer|min:1|max:10',
             'scheduled_at' => 'nullable|date|after:now',
             'track_opens' => 'nullable|boolean',
@@ -188,6 +200,10 @@ class CampaignController extends Controller
 
         $data['track_opens'] = $request->boolean('track_opens', true);
         $data['track_clicks'] = $request->boolean('track_clicks', true);
+        $data['warmup'] = $request->boolean('warmup', false);
+        $data['eps'] = $data['eps'] ?? $campaign->eps ?? 10;
+        $data['batch_size'] = $data['batch_size'] ?? $campaign->batch_size ?? 100;
+
 
         $campaign->update($data);
 

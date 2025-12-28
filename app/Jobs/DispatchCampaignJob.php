@@ -45,7 +45,7 @@ class DispatchCampaignJob implements ShouldQueue
         ]);
 
         $delay = 0;
-        $rate = $this->campaign->throttle_rate ?: 10; // emails per second
+        $rate = $this->campaign->eps ?: $this->campaign->throttle_rate ?: 10; // emails per second
 
         foreach ($contacts as $contact) {
             // Check if campaign was paused/stopped in the meantime
